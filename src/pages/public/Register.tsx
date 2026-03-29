@@ -9,6 +9,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Mail, Lock, User, Phone, Calendar, MapPin, AlertCircle, Chrome, ArrowLeft } from 'lucide-react';
 import api from '@/services/api';
+import { authService } from '@/services/authService';
 import type { Distrito } from '@/types';
 
 export const Register: React.FC = () => {
@@ -76,14 +77,14 @@ export const Register: React.FC = () => {
         distrito: formData.distrito,
         password: formData.password
       });
-      navigate('/cliente');
+      navigate('/redirect');
     } catch (error) {
       // Error ya manejado en el store
     }
   };
 
   const handleGoogleRegister = () => {
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = authService.getGoogleOAuthUrl();
   };
 
   return (

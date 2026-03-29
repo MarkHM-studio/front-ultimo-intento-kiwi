@@ -50,10 +50,10 @@ export const authService = {
     return response.data;
   },
 
-  // Google OAuth (mock/simulated)
-  loginWithGoogle: async (token: string): Promise<LoginResponse> => {
-    const response = await api.post<LoginResponse>('/auth/google', { token });
-    return response.data;
+  getGoogleOAuthUrl: (): string => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+    const rootUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
+    return `${rootUrl}/oauth2/authorization/google`;
   }
 };
 

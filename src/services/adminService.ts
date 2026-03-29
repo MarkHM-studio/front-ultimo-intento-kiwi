@@ -10,7 +10,9 @@ import type {
   Trabajador, TrabajadorRequest,
   MesaRequest, MesaResponse,
   RecetaRequest, RecetaResponse,
-  DashboardStats
+  DashboardStats,
+  ComprobanteResponse,
+  MesasOcupadasResponse
 } from '@/types';
 
 export const adminService = {
@@ -224,8 +226,31 @@ export const adminService = {
 
   // ============ DASHBOARD ============
   getDashboardStats: async (): Promise<DashboardStats> => {
-    const response = await api.get<DashboardStats>('/dashboard/stats');
-    return response.data;
+    const [comprobantesResponse, mesasResponse] = await Promise.all([
+      api.get<ComprobanteResponse[]>('/comprobante'),
+      api.get<MesasOcupadasResponse[]>('/mesa/ocupadas'),
+    ]);
+
+    const comprobantes = comprobantesResponse.data;
+    const mesas = mesasResponse.data;
+    const today = new Date().toISOString().slice(0, 10);
+
+    const ventasHoy = comprobantes
+      .filter((c) => c.estado === 'PAGADO' && c.fechaHoraVenta?.slice(0, 10) === today)
+      .reduce((sum, c) => sum + c.total, 0);
+
+    const totalVentasHoy = comprobantes.filter(
+      (c) => c.estado === 'PAGADO' && c.fechaHoraVenta?.slice(0, 10) === today
+    ).length;
+
+    return {
+      ventasHoy,
+      totalPedidosHoy: totalVentasHoy,
+      mesasOcupadas: mesas.length,
+      reservasPendientes: 0,
+      ventasSemana: comprobantes.filter((c) => c.estado === 'PAGADO').reduce((sum, c) => sum + c.total, 0),
+      ventasMes: comprobantes.filter((c) => c.estado === 'PAGADO').reduce((sum, c) => sum + c.total, 0),
+    };
   }
 };
 

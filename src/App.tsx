@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { RoleRedirect } from '@/components/common/RoleRedirect';
+import { useAuthStore } from '@/stores';
 
 // Public pages
 import { Welcome } from '@/pages/public/Welcome';
@@ -13,6 +15,15 @@ import { ResetPassword } from '@/pages/public/ResetPassword';
 import { Dashboard } from '@/pages/admin/Dashboard';
 import { Productos } from '@/pages/admin/Productos';
 import { Usuarios } from '@/pages/admin/Usuarios';
+import { Ventas } from '@/pages/admin/Ventas';
+import { Insumos } from '@/pages/admin/Insumos';
+import { Recetas } from '@/pages/admin/Recetas';
+import { Categorias } from '@/pages/admin/Categorias';
+import { Marcas } from '@/pages/admin/Marcas';
+import { Proveedores } from '@/pages/admin/Proveedores';
+import { Clientes } from '@/pages/admin/Clientes';
+import { Trabajadores } from '@/pages/admin/Trabajadores';
+import { Mesas } from '@/pages/admin/Mesas';
 
 // Mozo pages
 import { MozoDashboard } from '@/pages/mozo/MozoDashboard';
@@ -36,11 +47,46 @@ import { AlmaceneroDashboard } from '@/pages/almacenero/AlmaceneroDashboard';
 import { ClienteDashboard } from '@/pages/cliente/ClienteDashboard';
 
 function App() {
+  const { token, user, fetchCurrentUser, logout } = useAuthStore();
+  const [isBootstrapping, setIsBootstrapping] = useState(true);
+
+  useEffect(() => {
+    const bootstrap = async () => {
+      if (!token) {
+        setIsBootstrapping(false);
+        return;
+      }
+
+      if (user) {
+        setIsBootstrapping(false);
+        return;
+      }
+
+      try {
+        await fetchCurrentUser();
+      } catch {
+        logout();
+      } finally {
+        setIsBootstrapping(false);
+      }
+    };
+
+    bootstrap();
+  }, [token, user, fetchCurrentUser, logout]);
+
+  if (isBootstrapping) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-sm text-gray-600">
+        Cargando sesión...
+      </div>
+    );
+  }
+
   return (
     <BrowserRouter>
       <Routes>
         {/* Public Routes */}
-        <Route path="/" element={<Welcome />} />
+        <Route path="/" element={token ? <RoleRedirect /> : <Welcome />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -74,6 +120,78 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
               <Usuarios />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/ventas"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Ventas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/insumos"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Insumos />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/recetas"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Recetas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/categorias"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Categorias />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/marcas"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Marcas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/proveedores"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Proveedores />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/clientes"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Clientes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/trabajadores"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Trabajadores />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/mesas"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Mesas />
             </ProtectedRoute>
           }
         />

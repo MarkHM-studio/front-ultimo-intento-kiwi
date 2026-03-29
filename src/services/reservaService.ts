@@ -16,7 +16,7 @@ export const reservaService = {
 
   // Get reservas by usuario (cliente)
   getByUsuario: async (): Promise<ReservaResponse[]> => {
-    const response = await api.get<ReservaResponse[]>('/reserva/mis-reservas');
+    const response = await api.get<ReservaResponse[]>('/reserva');
     return response.data;
   },
 

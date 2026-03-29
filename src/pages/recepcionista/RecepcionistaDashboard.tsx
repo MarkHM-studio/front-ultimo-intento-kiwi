@@ -8,16 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Calendar, CheckCircle, Clock, Users, Search, XCircle } from 'lucide-react';
 
 export const RecepcionistaDashboard: React.FC = () => {
-  const { reservas, fetchReservas, isLoading } = useReservaStore();
+  const { reservas, transacciones, fetchReservas, fetchTransacciones, isLoading } = useReservaStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterEstado, setFilterEstado] = useState<string>('todos');
 
   useEffect(() => {
     fetchReservas();
+    fetchTransacciones();
     
     // Actualizar cada 30 segundos
     const interval = setInterval(() => {
       fetchReservas();
+      fetchTransacciones();
     }, 30000);
     
     return () => clearInterval(interval);
@@ -68,7 +70,7 @@ export const RecepcionistaDashboard: React.FC = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card className="border-l-4 border-l-yellow-500">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -105,7 +107,7 @@ export const RecepcionistaDashboard: React.FC = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-500">Canceladas</p>
+                    <p className="text-sm font-medium text-gray-500">Canceladas</p>
                   <p className="text-3xl font-bold text-gray-900">
                     {reservas.filter(r => r.estado === 'CANCELADO').length}
                   </p>
@@ -126,6 +128,20 @@ export const RecepcionistaDashboard: React.FC = () => {
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <Users className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-indigo-500">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Transacciones</p>
+                  <p className="text-3xl font-bold text-gray-900">{transacciones.length}</p>
+                </div>
+                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-indigo-600" />
                 </div>
               </div>
             </CardContent>
@@ -193,7 +209,7 @@ export const RecepcionistaDashboard: React.FC = () => {
                         {new Date(reserva.fechaReserva).toLocaleDateString()}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm">
+                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Hora:</span>
                       <span className="font-medium">{reserva.horaReserva}</span>
                     </div>
@@ -218,6 +234,32 @@ export const RecepcionistaDashboard: React.FC = () => {
             ))
           )}
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Últimas transacciones de reservas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {transacciones.length === 0 ? (
+              <p className="text-gray-500 text-sm">No hay transacciones registradas.</p>
+            ) : (
+              <div className="space-y-2">
+                {transacciones.slice(0, 8).map((transaccion) => (
+                  <div key={transaccion.id} className="flex items-center justify-between border rounded-md p-3 text-sm">
+                    <div>
+                      <p className="font-medium">Reserva #{transaccion.reserva.id}</p>
+                      <p className="text-gray-500">{transaccion.estadoMercadoPago}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">S/ {transaccion.monto.toFixed(2)}</p>
+                      <p className="text-gray-500">{new Date(transaccion.fechaActualizacion).toLocaleString()}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </MainLayout>
   );

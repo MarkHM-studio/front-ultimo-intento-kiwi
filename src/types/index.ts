@@ -267,6 +267,8 @@ export interface Transaccion {
   reserva: Reserva;
 }
 
+export type TransaccionResponse = Transaccion;
+
 export interface Entrada {
   id: number;
   cantidadTotal: number;

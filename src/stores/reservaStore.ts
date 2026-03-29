@@ -4,9 +4,11 @@ import type {
   ReservaResponse,
   MesasDisponiblesResponse,
   CrearPreferenciaPagoRequest,
-  CrearPreferenciaPagoResponse
+  CrearPreferenciaPagoResponse,
+  TransaccionResponse
 } from '@/types';
 import { reservaService } from '@/services/reservaService';
+import { transaccionService } from '@/services/transaccionService';
 
 interface ReservaState {
   // Estado
@@ -15,6 +17,7 @@ interface ReservaState {
   reservaActual: ReservaResponse | null;
   mesasDisponibles: MesasDisponiblesResponse[];
   preferenciaPago: CrearPreferenciaPagoResponse | null;
+  transacciones: TransaccionResponse[];
   isLoading: boolean;
   error: string | null;
 
@@ -27,6 +30,7 @@ interface ReservaState {
   cancelarReserva: (id: number) => Promise<void>;
   fetchMesasDisponibles: (fecha: string, hora: string) => Promise<void>;
   crearPreferenciaPago: (data: CrearPreferenciaPagoRequest) => Promise<CrearPreferenciaPagoResponse>;
+  fetchTransacciones: () => Promise<void>;
   clearReservaActual: () => void;
   clearPreferenciaPago: () => void;
   clearError: () => void;
@@ -39,6 +43,7 @@ export const useReservaStore = create<ReservaState>((set) => ({
   reservaActual: null,
   mesasDisponibles: [],
   preferenciaPago: null,
+  transacciones: [],
   isLoading: false,
   error: null,
 
@@ -173,6 +178,20 @@ export const useReservaStore = create<ReservaState>((set) => ({
         isLoading: false 
       });
       throw error;
+    }
+  },
+
+   // Fetch transacciones (recepcionista)
+  fetchTransacciones: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const transacciones = await transaccionService.getAll();
+      set({ transacciones, isLoading: false });
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || 'Error al cargar transacciones',
+        isLoading: false
+      });
     }
   },
 

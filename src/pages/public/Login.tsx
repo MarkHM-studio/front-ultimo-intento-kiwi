@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Eye, EyeOff, Mail, Lock, AlertCircle, Chrome } from 'lucide-react';
+import { authService } from '@/services/authService';
 
 export const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -32,16 +33,15 @@ export const Login: React.FC = () => {
         correo: formData.correo,
         password: formData.password
       });
-      // Redirigir según el rol
-      navigate('/');
+      // Redirigir según el rol autenticado
+      navigate('/redirect');
     } catch (error) {
       // Error ya manejado en el store
     }
   };
 
   const handleGoogleLogin = () => {
-    // Implementar OAuth con Google
-    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
+    window.location.href = authService.getGoogleOAuthUrl();
   };
 
   return (

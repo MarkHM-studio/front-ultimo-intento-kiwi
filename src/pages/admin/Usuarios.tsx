@@ -39,7 +39,7 @@ const ROLES = [
   { id: 3, nombre: 'COCINERO' },
   { id: 4, nombre: 'BARTENDER' },
   { id: 5, nombre: 'CAJERO' },
-  { id: 6, nombre: 'RECEPCIONISTA' },
+ { id: 6, nombre: 'RECEPCIONISTA' },
   { id: 7, nombre: 'ALMACENERO' },
   { id: 8, nombre: 'ADMINISTRADOR' },
 ];
@@ -64,7 +64,7 @@ export const Usuarios: React.FC = () => {
 
   const filteredUsuarios = usuarios.filter(u =>
     u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    u.rol.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    (u.rol?.nombre || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,7 +89,7 @@ export const Usuarios: React.FC = () => {
       password: '',
       tipoUsuario: usuario.tipoUsuario,
       estado: usuario.estado,
-      rolId: usuario.rol.id
+      rolId: usuario.rol?.id || 1
     });
     setIsDialogOpen(true);
   };
@@ -244,7 +244,7 @@ export const Usuarios: React.FC = () => {
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-10"
                 />
-              </div>
+  </div>
             </div>
           </CardHeader>
           <CardContent>
@@ -269,7 +269,7 @@ export const Usuarios: React.FC = () => {
                   filteredUsuarios.map((usuario) => (
                     <TableRow key={usuario.id}>
                       <TableCell className="font-medium">{usuario.username}</TableCell>
-                      <TableCell>{getRolBadge(usuario.rol.nombre)}</TableCell>
+                      <TableCell>{getRolBadge(usuario.rol?.nombre || 'SIN_ROL')}</TableCell>
                       <TableCell>
                         <Badge variant="outline">{usuario.provider}</Badge>
                       </TableCell>

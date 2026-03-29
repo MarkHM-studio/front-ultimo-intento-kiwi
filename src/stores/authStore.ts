@@ -85,7 +85,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false 
           });
           throw error;
-        }
+         }
       },
 
       // Logout
@@ -110,6 +110,8 @@ export const useAuthStore = create<AuthState>()(
           set({ user, isAuthenticated: true /*Agregó esto*/ });
         } catch (error) {
           console.error('Error fetching current user:', error);
+          set({ user: null, token: null, isAuthenticated: false });
+          throw error;
         }
       },
 

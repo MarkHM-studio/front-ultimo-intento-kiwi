@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useAdminStore, useComprobanteStore, useReservaStore } from '@/stores';
+import { useAdminStore, useComprobanteStore } from '@/stores';
 import { MainLayout } from '@/components/common/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,12 +32,10 @@ export const Dashboard: React.FC = () => {
     fetchProductos
   } = useAdminStore();
   const { comprobantes, fetchComprobantes } = useComprobanteStore();
-  const { reservas, fetchReservas } = useReservaStore();
 
   useEffect(() => {
     fetchDashboardStats();
     fetchComprobantes();
-    fetchReservas();
     fetchProductos();
   }, []);
 
@@ -58,7 +56,7 @@ export const Dashboard: React.FC = () => {
   }));
 
   const comprobantesAbiertos = comprobantes.filter(c => c.estado === 'ABIERTO').length;
-  const reservasPendientes = reservas.filter(r => r.estado === 'ESPERANDO PAGO').length;
+  const reservasPendientes = dashboardStats?.reservasPendientes || 0;
 
   const exportarReporte = (tipo: string) => {
     // Implementar exportación a Excel
@@ -206,7 +204,7 @@ export const Dashboard: React.FC = () => {
                   </Badge>
                 </div>
               </div>
-            </CardContent>
+           </CardContent>
           </Card>
 
           <Card>
@@ -231,7 +229,7 @@ export const Dashboard: React.FC = () => {
                     <span>Confirmadas</span>
                   </div>
                   <Badge variant="secondary">
-                    {reservas.filter(r => r.estado === 'PAGADO').length}
+                    0
                   </Badge>
                 </div>
               </div>

@@ -1,51 +1,36 @@
-import { useEffect, useState } from 'react';
-import { useAdminStore } from '@/stores';
+import { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/components/common/MainLayout';
+import { useAdminStore } from '@/stores';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
 import type { ProductoRequest } from '@/types';
 
+const initialForm: ProductoRequest = {
+  nombre: '',
+  precio: 0,
+  stock: 0,
+  categoriaId: 0,
+  marcaId: undefined,
+};
+
 export const Productos: React.FC = () => {
-  const { productos, categorias, marcas, fetchProductos, fetchCategorias, fetchMarcas, createProducto, updateProducto, deleteProducto, isLoading } = useAdminStore();
-  
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingProducto, setEditingProducto] = useState<number | null>(null);
-  const [formData, setFormData] = useState<ProductoRequest>({
-    nombre: '',
-    precio: 0,
-    stock: 0,
-    categoriaId: 0,
-    marcaId: undefined
-  });
+  const {
+    productos,
+    categorias,
+    marcas,
+    fetchProductos,
+    fetchCategorias,
+    fetchMarcas,
+    createProducto,
+    updateProducto,
+    deleteProducto,
+    isLoading,
+  } = useAdminStore();
+
+  const [search, setSearch] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<ProductoRequest>(initialForm);
 
   useEffect(() => {
     fetchProductos();
@@ -53,245 +38,98 @@ export const Productos: React.FC = () => {
     fetchMarcas();
   }, []);
 
-  const filteredProductos = productos.filter(p =>
-    p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.categoria.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  const filtered = useMemo(
+    () =>
+      productos.filter((p) => {
+        const nombre = p.nombre?.toLowerCase() || '';
+        const categoria = p.categoria?.nombre?.toLowerCase() || '';
+        const q = search.toLowerCase();
+        return nombre.includes(q) || categoria.includes(q);
+      }),
+    [productos, search]
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      if (editingProducto) {
-        await updateProducto(editingProducto, formData);
-      } else {
-        await createProducto(formData);
-      }
-      setIsDialogOpen(false);
-      resetForm();
-    } catch (error) {
-      console.error('Error saving producto:', error);
-    }
+    if (!form.nombre || !form.categoriaId) return;
+
+    if (editingId) await updateProducto(editingId, form);
+    else await createProducto(form);
+
+    setEditingId(null);
+    setForm(initialForm);
   };
 
-  const handleEdit = (producto: typeof productos[0]) => {
-    setEditingProducto(producto.id);
-    setFormData({
-      nombre: producto.nombre,
-      precio: producto.precio,
-      stock: producto.stock,
-      categoriaId: producto.categoria.id,
-      marcaId: producto.marca?.id
+  const edit = (id: number) => {
+    const p = productos.find((x) => x.id === id);
+    if (!p) return;
+    setEditingId(id);
+    setForm({
+      nombre: p.nombre || '',
+      precio: p.precio || 0,
+      stock: p.stock || 0,
+      categoriaId: p.categoria?.id || 0,
+      marcaId: p.marca?.id,
     });
-    setIsDialogOpen(true);
-  };
-
-  const handleDelete = async (id: number) => {
-    if (confirm('¿Estás seguro de eliminar este producto?')) {
-      try {
-        await deleteProducto(id);
-      } catch (error) {
-        console.error('Error deleting producto:', error);
-      }
-    }
-  };
-
-  const resetForm = () => {
-    setEditingProducto(null);
-    setFormData({
-      nombre: '',
-      precio: 0,
-      stock: 0,
-      categoriaId: 0,
-      marcaId: undefined
-    });
-  };
-
-  const getStockBadge = (stock: number, categoriaNombre: string) => {
-    // Productos preparados siempre tienen stock 0
-    if (categoriaNombre === 'Plato gastronómico' || categoriaNombre === 'Bebida alcohólica preparada') {
-      return <Badge variant="outline" className="text-gray-500">N/A</Badge>;
-    }
-    if (stock <= 5) return <Badge variant="destructive">{stock}</Badge>;
-    if (stock <= 15) return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">{stock}</Badge>;
-    return <Badge variant="default" className="bg-green-100 text-green-800">{stock}</Badge>;
   };
 
   return (
     <MainLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">Gestión de Productos</h2>
-            <p className="text-gray-500">Administra los productos del menú</p>
-          </div>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-amber-600 hover:bg-amber-700" onClick={resetForm}>
-                <Plus className="mr-2 h-4 w-4" />
-                Nuevo Producto
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader>
-                <DialogTitle>{editingProducto ? 'Editar Producto' : 'Nuevo Producto'}</DialogTitle>
-                <DialogDescription>
-                  Completa los datos del producto
-                </DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleSubmit}>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="nombre">Nombre</Label>
-                    <Input
-                      id="nombre"
-                      value={formData.nombre}
-                      onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                      placeholder="Nombre del producto"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="precio">Precio (S/)</Label>
-                      <Input
-                        id="precio"
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={formData.precio}
-                        onChange={(e) => setFormData({ ...formData, precio: parseFloat(e.target.value) })}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="stock">Stock</Label>
-                      <Input
-                        id="stock"
-                        type="number"
-                        min="0"
-                        value={formData.stock}
-                        onChange={(e) => setFormData({ ...formData, stock: parseInt(e.target.value) })}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="categoria">Categoría</Label>
-                    <Select 
-                      value={formData.categoriaId.toString()} 
-                      onValueChange={(value) => setFormData({ ...formData, categoriaId: parseInt(value) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona una categoría" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categorias.map((c) => (
-                          <SelectItem key={c.id} value={c.id.toString()}>
-                            {c.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="marca">Marca (opcional)</Label>
-                    <Select 
-                      value={formData.marcaId?.toString() || ''} 
-                      onValueChange={(value) => setFormData({ ...formData, marcaId: value ? parseInt(value) : undefined })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecciona una marca" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">Sin marca</SelectItem>
-                        {marcas.map((m) => (
-                          <SelectItem key={m.id} value={m.id.toString()}>
-                            {m.nombre}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" className="bg-amber-600 hover:bg-amber-700" disabled={isLoading}>
-                    {isLoading ? 'Guardando...' : (editingProducto ? 'Actualizar' : 'Guardar')}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <h2 className="text-2xl font-bold">Gestión de Productos</h2>
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Lista de Productos
-              </CardTitle>
-              <div className="relative w-64">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar producto..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
+            <CardTitle>{editingId ? 'Editar' : 'Nuevo'} producto</CardTitle>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nombre</TableHead>
-                  <TableHead>Categoría</TableHead>
-                  <TableHead>Marca</TableHead>
-                  <TableHead>Precio</TableHead>
-                  <TableHead>Stock</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredProductos.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center text-gray-500 py-8">
-                      No se encontraron productos
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredProductos.map((producto) => (
-                    <TableRow key={producto.id}>
-                      <TableCell className="font-medium">{producto.nombre}</TableCell>
-                      <TableCell>{producto.categoria.nombre}</TableCell>
-                      <TableCell>{producto.marca?.nombre || '-'}</TableCell>
-                      <TableCell>S/ {producto.precio.toFixed(2)}</TableCell>
-                      <TableCell>{getStockBadge(producto.stock, producto.categoria.nombre)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleEdit(producto)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleDelete(producto.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-red-500" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <form onSubmit={submit} className="grid md:grid-cols-5 gap-2">
+              <Input placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+              <Input type="number" step="0.01" placeholder="Precio" value={form.precio} onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })} />
+              <Input type="number" placeholder="Stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
+
+              <select className="border rounded px-2" value={form.categoriaId || 0} onChange={(e) => setForm({ ...form, categoriaId: Number(e.target.value) })}>
+                <option value={0}>Categoría</option>
+                {categorias.map((c) => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
+              </select>
+
+              <select className="border rounded px-2" value={form.marcaId || 0} onChange={(e) => setForm({ ...form, marcaId: Number(e.target.value) || undefined })}>
+                <option value={0}>Sin marca</option>
+                {marcas.map((m) => (
+                  <option key={m.id} value={m.id}>{m.nombre}</option>
+                ))}
+              </select>
+
+              <div className="md:col-span-5 flex gap-2">
+                <Button type="submit" disabled={isLoading}>{editingId ? 'Actualizar' : 'Crear'}</Button>
+                {editingId && <Button type="button" variant="outline" onClick={() => { setEditingId(null); setForm(initialForm); }}>Cancelar</Button>}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Listado de productos</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Input placeholder="Buscar por nombre o categoría" value={search} onChange={(e) => setSearch(e.target.value)} className="mb-3" />
+            <div className="space-y-2">
+              {filtered.map((p) => (
+                <div key={p.id} className="border rounded p-3 flex items-center justify-between">
+                  <div>
+                    <p className="font-medium">{p.nombre || 'Sin nombre'}</p>
+                    <p className="text-sm text-gray-500">Categoría: {p.categoria?.nombre || 'N/A'} | Marca: {p.marca?.nombre || 'N/A'} | S/ {p.precio ?? 0}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => edit(p.id)}>Editar</Button>
+                    <Button variant="destructive" size="sm" onClick={() => deleteProducto(p.id)}>Eliminar</Button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
