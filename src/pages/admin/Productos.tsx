@@ -6,135 +6,54 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { ProductoRequest } from '@/types';
 
-const initialForm: ProductoRequest = {
-  nombre: '',
-  precio: 0,
-  stock: 0,
-  categoriaId: 0,
-  marcaId: undefined,
-};
+const PAGE_SIZE = 6;
+const initialForm: ProductoRequest = { nombre:'', precio:0, stock:0, categoriaId:0, marcaId:undefined };
 
 export const Productos: React.FC = () => {
-  const {
-    productos,
-    categorias,
-    marcas,
-    fetchProductos,
-    fetchCategorias,
-    fetchMarcas,
-    createProducto,
-    updateProducto,
-    deleteProducto,
-    isLoading,
-  } = useAdminStore();
-
-  const [search, setSearch] = useState('');
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const { productos, categorias, marcas, fetchProductos, fetchCategorias, fetchMarcas, createProducto, updateProducto } = useAdminStore();
   const [form, setForm] = useState<ProductoRequest>(initialForm);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [search, setSearch] = useState('');
+  const [categoriaFilter, setCategoriaFilter] = useState<number>(0);
+  const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    fetchProductos();
-    fetchCategorias();
-    fetchMarcas();
-  }, []);
+  useEffect(() => { fetchProductos(); fetchCategorias(); fetchMarcas(); }, []);
 
-  const filtered = useMemo(
-    () =>
-      productos.filter((p) => {
-        const nombre = p.nombre?.toLowerCase() || '';
-        const categoria = p.categoria?.nombre?.toLowerCase() || '';
-        const q = search.toLowerCase();
-        return nombre.includes(q) || categoria.includes(q);
-      }),
-    [productos, search]
-  );
+  const filtered = useMemo(() => productos.filter(p => {
+    const matchSearch = (`${p.nombre} ${p.categoria?.nombre || ''}`).toLowerCase().includes(search.toLowerCase());
+    const matchCat = categoriaFilter === 0 || p.categoria?.id === categoriaFilter;
+    return matchSearch && matchCat;
+  }), [productos, search, categoriaFilter]);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const rows = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
 
-  const submit = async (e: React.FormEvent) => {
+  const guardar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.nombre || !form.categoriaId) return;
-
-    if (editingId) await updateProducto(editingId, form);
-    else await createProducto(form);
-
-    setEditingId(null);
-    setForm(initialForm);
+    if (editingId) await updateProducto(editingId, form); else await createProducto(form);
+    setEditingId(null); setForm(initialForm); fetchProductos();
   };
 
-  const edit = (id: number) => {
-    const p = productos.find((x) => x.id === id);
-    if (!p) return;
-    setEditingId(id);
-    setForm({
-      nombre: p.nombre || '',
-      precio: p.precio || 0,
-      stock: p.stock || 0,
-      categoriaId: p.categoria?.id || 0,
-      marcaId: p.marca?.id,
-    });
-  };
+  return <MainLayout><div className="space-y-6"><h2 className="text-2xl font-bold">Gestión de Productos</h2>
+    <Card><CardHeader><CardTitle>Formulario (ProductoRequest)</CardTitle></CardHeader><CardContent>
+      <form onSubmit={guardar} className="grid md:grid-cols-5 gap-2">
+        <Input placeholder="nombre" value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})} />
+        <Input type="number" step="0.01" placeholder="precio" value={form.precio} onChange={e=>setForm({...form,precio:Number(e.target.value)})} />
+        <Input type="number" placeholder="stock" value={form.stock} onChange={e=>setForm({...form,stock:Number(e.target.value)})} />
+        <select className="border rounded px-2" value={form.categoriaId} onChange={e=>setForm({...form,categoriaId:Number(e.target.value)})}><option value={0}>categoriaId</option>{categorias.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}</select>
+        <select className="border rounded px-2" value={form.marcaId || 0} onChange={e=>setForm({...form,marcaId:Number(e.target.value)||undefined})}><option value={0}>sin marca</option>{marcas.map(m=><option key={m.id} value={m.id}>{m.nombre}</option>)}</select>
+        <div className="md:col-span-5 flex gap-2"><Button type="submit">Guardar</Button>{editingId && <Button type="button" variant="outline" onClick={()=>{setEditingId(null);setForm(initialForm);}}>Cancelar</Button>}</div>
+      </form>
+    </CardContent></Card>
 
-  return (
-    <MainLayout>
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Gestión de Productos</h2>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? 'Editar' : 'Nuevo'} producto</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={submit} className="grid md:grid-cols-5 gap-2">
-              <Input placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
-              <Input type="number" step="0.01" placeholder="Precio" value={form.precio} onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })} />
-              <Input type="number" placeholder="Stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
-
-              <select className="border rounded px-2" value={form.categoriaId || 0} onChange={(e) => setForm({ ...form, categoriaId: Number(e.target.value) })}>
-                <option value={0}>Categoría</option>
-                {categorias.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
-                ))}
-              </select>
-
-              <select className="border rounded px-2" value={form.marcaId || 0} onChange={(e) => setForm({ ...form, marcaId: Number(e.target.value) || undefined })}>
-                <option value={0}>Sin marca</option>
-                {marcas.map((m) => (
-                  <option key={m.id} value={m.id}>{m.nombre}</option>
-                ))}
-              </select>
-
-              <div className="md:col-span-5 flex gap-2">
-                <Button type="submit" disabled={isLoading}>{editingId ? 'Actualizar' : 'Crear'}</Button>
-                {editingId && <Button type="button" variant="outline" onClick={() => { setEditingId(null); setForm(initialForm); }}>Cancelar</Button>}
-              </div>
-            </form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Listado de productos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Input placeholder="Buscar por nombre o categoría" value={search} onChange={(e) => setSearch(e.target.value)} className="mb-3" />
-            <div className="space-y-2">
-              {filtered.map((p) => (
-                <div key={p.id} className="border rounded p-3 flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{p.nombre || 'Sin nombre'}</p>
-                    <p className="text-sm text-gray-500">Categoría: {p.categoria?.nombre || 'N/A'} | Marca: {p.marca?.nombre || 'N/A'} | S/ {p.precio ?? 0}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => edit(p.id)}>Editar</Button>
-                    <Button variant="destructive" size="sm" onClick={() => deleteProducto(p.id)}>Eliminar</Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </MainLayout>
-  );
+    <Card><CardHeader><CardTitle>Listado (ProductoResponse)</CardTitle></CardHeader><CardContent>
+      <div className="flex gap-2 mb-3"><Input placeholder="Buscar" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} />
+      <select className="border rounded px-2" value={categoriaFilter} onChange={e=>{setCategoriaFilter(Number(e.target.value));setPage(1);}}><option value={0}>Todas categorías</option>{categorias.map(c=><option key={c.id} value={c.id}>{c.nombre}</option>)}</select></div>
+      <table className="w-full text-sm border"><thead><tr className="bg-gray-50"><th className="p-2 border">id</th><th className="p-2 border">nombre</th><th className="p-2 border">precio</th><th className="p-2 border">stock</th><th className="p-2 border">categoria</th><th className="p-2 border">marca</th><th className="p-2 border">acciones</th></tr></thead>
+      <tbody>{rows.map(p=><tr key={p.id}><td className="p-2 border">{p.id}</td><td className="p-2 border">{p.nombre}</td><td className="p-2 border">{p.precio}</td><td className="p-2 border">{p.stock}</td><td className="p-2 border">{p.categoria?.nombre || '-'}</td><td className="p-2 border">{p.marca?.nombre || '-'}</td><td className="p-2 border"><Button size="sm" variant="outline" onClick={()=>{setEditingId(p.id);setForm({ nombre:p.nombre, precio:Number(p.precio), stock:p.stock, categoriaId:p.categoria?.id || 0, marcaId:p.marca?.id });}}>Actualizar</Button></td></tr>)}</tbody></table>
+      <div className="flex justify-end gap-2 mt-3"><Button variant="outline" size="sm" disabled={page===1} onClick={()=>setPage(p=>p-1)}>Anterior</Button><span>{page}/{totalPages}</span><Button variant="outline" size="sm" disabled={page===totalPages} onClick={()=>setPage(p=>p+1)}>Siguiente</Button></div>
+    </CardContent></Card>
+  </div></MainLayout>;
 };
 
 export default Productos;
