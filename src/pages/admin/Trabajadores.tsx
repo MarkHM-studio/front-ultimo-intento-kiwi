@@ -9,7 +9,7 @@ import { RowActions } from './components/RowActions';
 import type { TrabajadorRequest } from '@/types';
 
 const initialForm: TrabajadorRequest = {
-  nombre: '', apellido: '', dni: '', telefono: '', correo: '', fechaInicio: '', fechaFin: '', estado: 'ACTIVO', usuarioId: 1, tipoJornadaId: 1, turnoId: 1,
+  nombre: '', apellido: '', dni: '', telefono: '', correo: '', fechaInicio: '', fechaFin: '', estado: 'ACTIVO', usuarioId: 1, tipoJornadaId: 1, turnoId: 3,
 };
 
 const TIPOS_JORNADA = [
@@ -18,10 +18,32 @@ const TIPOS_JORNADA = [
 ];
 
 const TURNOS = [
-  { id: 1, label: 'TARDE' },
-  { id: 2, label: 'NOCHE' },
+  { id: 1, label: 'NOCHE' },
+  { id: 2, label: 'MADRUGADA' },
   { id: 3, label: 'NOCHE Y MADRUGADA' },
 ];
+
+const normalizeText = (value?: string) => (value || '').trim().toUpperCase();
+
+const resolveTipoJornadaId = (worker: any) => {
+  const nombreJornada = normalizeText(worker.nombreJornada || worker.tipoJornada?.nombre);
+  if (nombreJornada === 'TIEMPO COMPLETO') return 1;
+  if (nombreJornada === 'TIEMPO PARCIAL') return 2;
+
+  const candidate = Number(worker.tipoJornada?.id ?? worker.tipoJornadaId);
+  return candidate === 1 || candidate === 2 ? candidate : 1;
+};
+
+const resolveTurnoId = (worker: any) => {
+  const nombreTurno = normalizeText(worker.nombreTurno || worker.turno?.nombre);
+  if (nombreTurno === 'NOCHE') return 1;
+  if (nombreTurno === 'MADRUGADA') return 2;
+  if (nombreTurno === 'NOCHE Y MADRUGADA') return 3;
+
+  const candidate = Number(worker.turno?.id ?? worker.turnoId);
+  return candidate >= 1 && candidate <= 3 ? candidate : 3;
+};
+const normalizeStatus = (value?: string) => (value || '').trim().toUpperCase();
 
 const formatDateForApi = (value: string) => {
   if (!value) return value;
@@ -38,12 +60,15 @@ export const Trabajadores: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<TrabajadorRequest>(initialForm);
+  const turnosPermitidos = useMemo(() => (
+    form.tipoJornadaId === 1 ? TURNOS.filter((shift) => shift.id === 3) : TURNOS.filter((shift) => shift.id === 1 || shift.id === 2)
+  ), [form.tipoJornadaId]);
 
-  useEffect(() => { fetchTrabajadores(); }, [fetchTrabajadores]);
+  useEffect(() => { fetchTrabajadores(statusFilter); }, [fetchTrabajadores, statusFilter]);
 
   const filtered = useMemo(() => trabajadores.filter((worker) =>
     `${worker.nombre} ${worker.apellido} ${worker.dni} ${worker.correo}`.toLowerCase().includes(search.toLowerCase()) &&
-    ((worker.estado || 'ACTIVO') === statusFilter),
+    (normalizeStatus(worker.estado || 'ACTIVO') === statusFilter),
   ), [trabajadores, search, statusFilter]);
 
   const reset = () => {
@@ -59,10 +84,11 @@ export const Trabajadores: React.FC = () => {
       estado: form.estado || 'ACTIVO',
       fechaInicio: formatDateForApi(form.fechaInicio),
       fechaFin: form.fechaFin ? formatDateForApi(form.fechaFin) : undefined,
+      turnoId: form.tipoJornadaId === 1 ? 3 : form.turnoId,
     };
     if (editingId) await updateTrabajador(editingId, payload);
     else await createTrabajador(payload);
-    await fetchTrabajadores();
+    await fetchTrabajadores(statusFilter);
     reset();
   };
 
@@ -101,6 +127,8 @@ export const Trabajadores: React.FC = () => {
                     <RowActions
                       onEdit={() => {
                         setEditingId(worker.id);
+                        const tipoJornadaId = resolveTipoJornadaId(worker);
+                        const turnoId = resolveTurnoId(worker);
                         setForm({
                           nombre: worker.nombre,
                           apellido: worker.apellido,
@@ -111,19 +139,19 @@ export const Trabajadores: React.FC = () => {
                           fechaFin: worker.fechaFin,
                           estado: worker.estado || 'ACTIVO',
                           usuarioId: worker.usuario?.id || worker.usuarioId || 1,
-                          tipoJornadaId: worker.tipoJornada?.id || worker.tipoJornadaId || 1,
-                          turnoId: worker.turno?.id || worker.turnoId || 1,
+                          tipoJornadaId,
+                          turnoId: tipoJornadaId === 1 ? 3 : (turnoId === 3 ? 1 : turnoId),
                         });
                         setOpen(true);
                       }}
-                      onDelete={worker.estado === 'INACTIVO' ? undefined : async () => {
+                      onDelete={normalizeStatus(worker.estado) === 'INACTIVO' ? undefined : async () => {
                         await deleteTrabajador(worker.id);
-                        await fetchTrabajadores();
+                        await fetchTrabajadores(statusFilter);
                       }}
-                      inactive={worker.estado === 'INACTIVO'}
+                      inactive={normalizeStatus(worker.estado) === 'INACTIVO'}
                       onActivate={async () => {
                         await activateTrabajador(worker.id);
-                        await fetchTrabajadores();
+                        await fetchTrabajadores(statusFilter);
                       }}
                     />
                   </td>
@@ -153,7 +181,18 @@ export const Trabajadores: React.FC = () => {
               <option value="INACTIVO">INACTIVO</option>
             </select>
             <Input type="number" placeholder="ID Usuario" value={form.usuarioId} onChange={(e) => setForm({ ...form, usuarioId: Number(e.target.value) })} />
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.tipoJornadaId} onChange={(e) => setForm({ ...form, tipoJornadaId: Number(e.target.value) })}>
+            <select
+              className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+              value={form.tipoJornadaId}
+              onChange={(e) => {
+                const tipoJornadaId = Number(e.target.value);
+                setForm((previous) => ({
+                  ...previous,
+                  tipoJornadaId,
+                  turnoId: tipoJornadaId === 1 ? 3 : (previous.turnoId === 3 ? 1 : previous.turnoId),
+                }));
+              }}
+            >
               {TIPOS_JORNADA.map((jornada) => (
                 <option key={jornada.id} value={jornada.id}>
                   {jornada.id} - {jornada.label}
@@ -161,7 +200,7 @@ export const Trabajadores: React.FC = () => {
               ))}
             </select>
             <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.turnoId} onChange={(e) => setForm({ ...form, turnoId: Number(e.target.value) })}>
-              {TURNOS.map((turno) => (
+              {turnosPermitidos.map((turno) => (
                 <option key={turno.id} value={turno.id}>
                   {turno.id} - {turno.label}
                 </option>

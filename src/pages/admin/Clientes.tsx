@@ -13,6 +13,7 @@ import type { Distrito } from '@/types';
 const initialForm: ClienteRequest = {
   nombre: '', apellido: '', fechaNacimiento: '', telefono: '', correo: '', distritoId: 1, usuarioId: 1,
 };
+const normalizeStatus = (value?: string) => (value || '').trim().toUpperCase();
 
 export const Clientes: React.FC = () => {
   const { clientes, fetchClientes, createCliente, updateCliente, deleteCliente, activateCliente } = useAdminStore();
@@ -24,7 +25,7 @@ export const Clientes: React.FC = () => {
   const [form, setForm] = useState<ClienteRequest>(initialForm);
 
   useEffect(() => {
-    fetchClientes();
+    fetchClientes(statusFilter);
     const fetchDistritos = async () => {
       try {
         const response = await api.get<Distrito[]>('/distrito');
@@ -34,11 +35,11 @@ export const Clientes: React.FC = () => {
       }
     };
     fetchDistritos();
-  }, [fetchClientes]);
+  }, [fetchClientes, statusFilter]);
 
   const filtered = useMemo(() => clientes.filter((client: any) =>
     `${client.nombre} ${client.apellido} ${client.correo} ${client.telefono}`.toLowerCase().includes(search.toLowerCase()) &&
-    ((client.estado || 'ACTIVO') === statusFilter),
+    (normalizeStatus(client.estado || 'ACTIVO') === statusFilter),
   ), [clientes, search, statusFilter]);
 
   const reset = () => {
@@ -51,7 +52,7 @@ export const Clientes: React.FC = () => {
     event.preventDefault();
     if (editingId) await updateCliente(editingId, form);
     else await createCliente(form);
-    await fetchClientes();
+    await fetchClientes(statusFilter);
     reset();
   };
 
@@ -101,14 +102,14 @@ export const Clientes: React.FC = () => {
                         });
                         setOpen(true);
                       }}
-                      onDelete={client.estado === 'INACTIVO' ? undefined : async () => {
+                      onDelete={normalizeStatus(client.estado) === 'INACTIVO' ? undefined : async () => {
                         await deleteCliente(client.id);
-                        await fetchClientes();
+                        await fetchClientes(statusFilter);
                       }}
-                      inactive={client.estado === 'INACTIVO'}
+                      inactive={normalizeStatus(client.estado) === 'INACTIVO'}
                       onActivate={async () => {
                         await activateCliente(client.id);
-                        await fetchClientes();
+                        await fetchClientes(statusFilter);
                       }}
                     />
                   </td>

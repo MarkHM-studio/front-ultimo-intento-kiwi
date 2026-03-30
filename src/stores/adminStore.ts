@@ -94,21 +94,21 @@ interface AdminState {
   deleteProveedor: (id: number) => Promise<void>;
 
   // Acciones - Usuarios
-  fetchUsuarios: () => Promise<void>;
+  fetchUsuarios: (estado?: 'ACTIVO' | 'INACTIVO') => Promise<void>;
   createUsuario: (data: UsuarioRequest) => Promise<UsuarioResponse>;
   updateUsuario: (id: number, data: UsuarioRequest) => Promise<UsuarioResponse>;
   deleteUsuario: (id: number) => Promise<void>;
   activateUsuario: (id: number) => Promise<void>;
 
   // Acciones - Clientes
-  fetchClientes: () => Promise<void>;
+  fetchClientes: (estado?: 'ACTIVO' | 'INACTIVO') => Promise<void>;
   createCliente: (data: ClienteRequest) => Promise<Cliente>;
   updateCliente: (id: number, data: ClienteRequest) => Promise<Cliente>;
   deleteCliente: (id: number) => Promise<void>;
   activateCliente: (id: number) => Promise<void>;
 
   // Acciones - Trabajadores
-  fetchTrabajadores: () => Promise<void>;
+  fetchTrabajadores: (estado?: 'ACTIVO' | 'INACTIVO') => Promise<void>;
   createTrabajador: (data: TrabajadorRequest) => Promise<Trabajador>;
   updateTrabajador: (id: number, data: TrabajadorRequest) => Promise<Trabajador>;
   deleteTrabajador: (id: number) => Promise<void>;
@@ -426,10 +426,10 @@ export const useAdminStore = create<AdminState>((set) => ({
   },
 
   // ============ USUARIOS ============
-  fetchUsuarios: async () => {
+  fetchUsuarios: async (estado) => {
     set({ isLoading: true, error: null });
     try {
-      const usuarios = await adminService.getUsuarios();
+      const usuarios = await adminService.getUsuarios(estado);
       set({ usuarios, isLoading: false });
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Error al cargar usuarios', isLoading: false });
@@ -468,7 +468,7 @@ export const useAdminStore = create<AdminState>((set) => ({
     try {
       await adminService.deleteUsuario(id);
       set(state => ({
-        usuarios: state.usuarios.filter(u => u.id !== id),
+        usuarios: state.usuarios.map(u => u.id === id ? { ...u, estado: 'INACTIVO' } : u),
         isLoading: false
       }));
     } catch (error: any) {
@@ -492,10 +492,10 @@ export const useAdminStore = create<AdminState>((set) => ({
   },
 
   // ============ CLIENTES ============
-  fetchClientes: async () => {
+  fetchClientes: async (estado) => {
     set({ isLoading: true, error: null });
     try {
-      const clientes = await adminService.getClientes();
+      const clientes = await adminService.getClientes(estado);
       set({ clientes, isLoading: false });
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Error al cargar clientes', isLoading: false });
@@ -534,7 +534,7 @@ export const useAdminStore = create<AdminState>((set) => ({
     try {
       await adminService.deleteCliente(id);
       set(state => ({
-        clientes: state.clientes.filter(c => c.id !== id),
+        clientes: state.clientes.map(c => c.id === id ? { ...c, estado: 'INACTIVO' } : c),
         isLoading: false
       }));
     } catch (error: any) {
@@ -558,10 +558,10 @@ export const useAdminStore = create<AdminState>((set) => ({
   },
 
   // ============ TRABAJADORES ============
-  fetchTrabajadores: async () => {
+  fetchTrabajadores: async (estado) => {
     set({ isLoading: true, error: null });
     try {
-      const trabajadores = await adminService.getTrabajadores();
+      const trabajadores = await adminService.getTrabajadores(estado);
       set({ trabajadores, isLoading: false });
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Error al cargar trabajadores', isLoading: false });
@@ -600,7 +600,7 @@ export const useAdminStore = create<AdminState>((set) => ({
     try {
       await adminService.deleteTrabajador(id);
       set(state => ({
-        trabajadores: state.trabajadores.filter(t => t.id !== id),
+        trabajadores: state.trabajadores.map(t => t.id === id ? { ...t, estado: 'INACTIVO' } : t),
         isLoading: false
       }));
     } catch (error: any) {

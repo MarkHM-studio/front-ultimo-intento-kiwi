@@ -124,8 +124,8 @@ export const adminService = {
   },
 
   // ============ USUARIOS ============
-  getUsuarios: async (): Promise<UsuarioResponse[]> => {
-    const response = await api.get<UsuarioResponse[]>('/usuario');
+  getUsuarios: async (estado?: 'ACTIVO' | 'INACTIVO'): Promise<UsuarioResponse[]> => {
+    const response = await api.get<UsuarioResponse[]>('/usuario', { params: estado ? { estado } : undefined });
     return response.data;
   },
 
@@ -148,8 +148,8 @@ export const adminService = {
   },
 
   // ============ CLIENTES ============
-  getClientes: async (): Promise<Cliente[]> => {
-    const response = await api.get<Cliente[]>('/cliente');
+  getClientes: async (estado?: 'ACTIVO' | 'INACTIVO'): Promise<Cliente[]> => {
+    const response = await api.get<Cliente[]>('/cliente', { params: estado ? { estado } : undefined });
     return response.data;
   },
 
@@ -172,8 +172,8 @@ export const adminService = {
   },
 
   // ============ TRABAJADORES ============
-  getTrabajadores: async (): Promise<Trabajador[]> => {
-    const response = await api.get<Trabajador[]>('/trabajador');
+  getTrabajadores: async (estado?: 'ACTIVO' | 'INACTIVO'): Promise<Trabajador[]> => {
+    const response = await api.get<Trabajador[]>('/trabajador', { params: estado ? { estado } : undefined });
     return response.data;
   },
 

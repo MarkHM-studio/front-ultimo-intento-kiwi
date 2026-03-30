@@ -21,6 +21,7 @@ const ROLES = [
   { id: 5, nombre: 'CAJERO' }, { id: 6, nombre: 'RECEPCIONISTA' }, { id: 7, nombre: 'ALMACENERO' }, { id: 8, nombre: 'ADMINISTRADOR' },
 ];
 const initialForm: UsuarioRequest = { username: '', password: '', tipoUsuario: 2, estado: 'ACTIVO', rolId: 2 };
+const normalizeStatus = (value?: string) => (value || '').trim().toUpperCase();
 
 export const Usuarios: React.FC = () => {
   const { usuarios, fetchUsuarios, createUsuario, updateUsuario, deleteUsuario, activateUsuario } = useAdminStore();
@@ -32,13 +33,13 @@ export const Usuarios: React.FC = () => {
   const [form, setForm] = useState<UsuarioRequest>(initialForm);
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => { fetchUsuarios(); }, [fetchUsuarios]);
+  useEffect(() => { fetchUsuarios(statusFilter); }, [fetchUsuarios, statusFilter]);
 
   const filtered = useMemo(() => usuarios.filter((user: any) => {
     const roleName = user.rol?.nombre || user.rolNombre || '';
     const bySearch = `${user.username} ${roleName}`.toLowerCase().includes(search.toLowerCase());
     const byRole = roleFilter === 0 || (user.rol?.id || user.rolId) === roleFilter;
-    const byStatus = (user.estado || 'ACTIVO') === statusFilter;
+    const byStatus = normalizeStatus(user.estado || 'ACTIVO') === statusFilter;
     return bySearch && byRole && byStatus;
   }), [usuarios, search, roleFilter, statusFilter]);
 
@@ -57,7 +58,7 @@ export const Usuarios: React.FC = () => {
     }
     if (editingId) await updateUsuario(editingId, form);
     else await createUsuario(form);
-    await fetchUsuarios();
+    await fetchUsuarios(statusFilter);
     reset();
   };
 
@@ -115,14 +116,14 @@ export const Usuarios: React.FC = () => {
                         });
                         setOpen(true);
                       }}
-                      onDelete={user.estado === 'INACTIVO' ? undefined : async () => {
+                      onDelete={normalizeStatus(user.estado) === 'INACTIVO' ? undefined : async () => {
                         await deleteUsuario(user.id);
-                        await fetchUsuarios();
+                        await fetchUsuarios(statusFilter);
                       }}
-                      inactive={user.estado === 'INACTIVO'}
+                      inactive={normalizeStatus(user.estado) === 'INACTIVO'}
                       onActivate={async () => {
                         await activateUsuario(user.id);
-                        await fetchUsuarios();
+                        await fetchUsuarios(statusFilter);
                       }}
                     />
                   </td>
