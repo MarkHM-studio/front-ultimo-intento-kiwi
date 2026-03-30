@@ -50,8 +50,15 @@ export const Clientes: React.FC = () => {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (editingId) await updateCliente(editingId, form);
-    else await createCliente(form);
+    const distritoSeleccionado = distritos.find((distrito) => distrito.id === form.distritoId);
+    const payload: any = {
+      ...form,
+      distrito: distritoSeleccionado?.nombre ?? String(form.distritoId),
+    };
+    delete payload.distritoId;
+
+    if (editingId) await updateCliente(editingId, payload);
+    else await createCliente(payload);
     await fetchClientes(statusFilter);
     reset();
   };
