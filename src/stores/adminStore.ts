@@ -98,18 +98,21 @@ interface AdminState {
   createUsuario: (data: UsuarioRequest) => Promise<UsuarioResponse>;
   updateUsuario: (id: number, data: UsuarioRequest) => Promise<UsuarioResponse>;
   deleteUsuario: (id: number) => Promise<void>;
+  activateUsuario: (id: number) => Promise<void>;
 
   // Acciones - Clientes
   fetchClientes: () => Promise<void>;
   createCliente: (data: ClienteRequest) => Promise<Cliente>;
   updateCliente: (id: number, data: ClienteRequest) => Promise<Cliente>;
   deleteCliente: (id: number) => Promise<void>;
+  activateCliente: (id: number) => Promise<void>;
 
   // Acciones - Trabajadores
   fetchTrabajadores: () => Promise<void>;
   createTrabajador: (data: TrabajadorRequest) => Promise<Trabajador>;
   updateTrabajador: (id: number, data: TrabajadorRequest) => Promise<Trabajador>;
   deleteTrabajador: (id: number) => Promise<void>;
+  activateTrabajador: (id: number) => Promise<void>;
 
   // Acciones - Mesas
   fetchMesas: () => Promise<void>;
@@ -474,6 +477,20 @@ export const useAdminStore = create<AdminState>((set) => ({
     }
   },
 
+  activateUsuario: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await adminService.activateUsuario(id);
+      set(state => ({
+        usuarios: state.usuarios.map(u => u.id === id ? { ...u, estado: 'ACTIVO' } : u),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || 'Error al activar usuario', isLoading: false });
+      throw error;
+    }
+  },
+
   // ============ CLIENTES ============
   fetchClientes: async () => {
     set({ isLoading: true, error: null });
@@ -526,6 +543,20 @@ export const useAdminStore = create<AdminState>((set) => ({
     }
   },
 
+  activateCliente: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await adminService.activateCliente(id);
+      set(state => ({
+        clientes: state.clientes.map(c => c.id === id ? { ...c, estado: 'ACTIVO' } : c),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || 'Error al activar cliente', isLoading: false });
+      throw error;
+    }
+  },
+
   // ============ TRABAJADORES ============
   fetchTrabajadores: async () => {
     set({ isLoading: true, error: null });
@@ -574,6 +605,20 @@ export const useAdminStore = create<AdminState>((set) => ({
       }));
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Error al eliminar trabajador', isLoading: false });
+      throw error;
+    }
+  },
+
+  activateTrabajador: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await adminService.activateTrabajador(id);
+      set(state => ({
+        trabajadores: state.trabajadores.map(t => t.id === id ? { ...t, estado: 'ACTIVO' } : t),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({ error: error.response?.data?.message || 'Error al activar trabajador', isLoading: false });
       throw error;
     }
   },

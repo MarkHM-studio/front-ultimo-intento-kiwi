@@ -659,6 +659,7 @@ export interface TrabajadorRequest {
   correo: string;
   fechaInicio: string;
   fechaFin?: string;
+  estado?: EstadoUsuario;
   usuarioId: number;
   tipoJornadaId: number;
   turnoId: number;

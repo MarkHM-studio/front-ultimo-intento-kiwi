@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/components/common/MainLayout';
 import { useAdminStore } from '@/stores';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-const PAGE_SIZE = 8;
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
+import { RowActions } from '@/pages/admin/components/RowActions';
 
 interface RecetaForm {
   productoId: number;
@@ -14,89 +14,142 @@ interface RecetaForm {
   unidadMedida: string;
 }
 
+const initialForm: RecetaForm = { productoId: 0, insumoId: 0, cantidad: 0, unidadMedida: 'KG' };
+
 export const Recetas: React.FC = () => {
   const { recetas, productos, insumos, fetchRecetas, fetchProductos, fetchInsumos, createReceta, updateReceta } = useAdminStore();
-  const [form, setForm] = useState<RecetaForm>({ productoId: 0, insumoId: 0, cantidad: 0, unidadMedida: 'KG' });
   const [search, setSearch] = useState('');
-  const [productoFilter, setProductoFilter] = useState<number>(0);
-  const [page, setPage] = useState(1);
+  const [productoFilter, setProductoFilter] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<RecetaForm>(initialForm);
 
-  useEffect(() => { fetchRecetas(); fetchProductos(); fetchInsumos(); }, []);
+  useEffect(() => {
+    fetchRecetas();
+    fetchProductos();
+    fetchInsumos();
+  }, [fetchRecetas, fetchProductos, fetchInsumos]);
 
-  const normalized = useMemo(() => recetas.map((r: any) => ({
-    id: r.id,
-    productoId: r.productoId ?? r.producto?.id,
-    productoNombre: r.productoNombre ?? r.producto?.nombre ?? 'N/A',
-    insumoId: r.insumoId ?? r.insumo?.id,
-    insumoNombre: r.insumoNombre ?? r.insumo?.nombre ?? 'N/A',
-    cantidad: Number(r.cantidad ?? 0),
-    unidadMedida: r.unidadMedida ?? '',
+  const normalized = useMemo(() => recetas.map((recipe: any) => ({
+    id: recipe.id,
+    productoId: recipe.productoId ?? recipe.producto?.id,
+    productoNombre: recipe.productoNombre ?? recipe.producto?.nombre ?? '-',
+    insumoId: recipe.insumoId ?? recipe.insumo?.id,
+    insumoNombre: recipe.insumoNombre ?? recipe.insumo?.nombre ?? '-',
+    cantidad: Number(recipe.cantidad ?? 0),
+    unidadMedida: recipe.unidadMedida ?? '-',
   })), [recetas]);
 
-  const filtered = useMemo(() => normalized.filter(r => {
-    const matchSearch = (r.productoNombre + ' ' + r.insumoNombre).toLowerCase().includes(search.toLowerCase());
-    const matchProducto = productoFilter === 0 || r.productoId === productoFilter;
-    return matchSearch && matchProducto;
+  const filtered = useMemo(() => normalized.filter((recipe) => {
+    const bySearch = `${recipe.productoNombre} ${recipe.insumoNombre}`.toLowerCase().includes(search.toLowerCase());
+    const byProduct = productoFilter === 0 || recipe.productoId === productoFilter;
+    return bySearch && byProduct;
   }), [normalized, search, productoFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const guardar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.productoId || !form.insumoId || !form.cantidad || !form.unidadMedida) return;
-    await createReceta({
-      productoId: form.productoId,
-      insumoId: form.insumoId,
-      cantidad: form.cantidad,
-      unidadMedida: form.unidadMedida,
-    } as any);
-    setForm({ productoId: 0, insumoId: 0, cantidad: 0, unidadMedida: 'KG' });
-    fetchRecetas();
+  const reset = () => {
+    setEditingId(null);
+    setForm(initialForm);
+    setOpen(false);
   };
 
-  const actualizarProducto = async (productoId: number) => {
-    const recetasProducto = normalized
-      .filter(r => r.productoId === productoId)
-      .map(r => ({ productoId: r.productoId, insumoId: r.insumoId, cantidad: r.cantidad, unidadMedida: r.unidadMedida }));
-    if (recetasProducto.length === 0) return;
-    await updateReceta(productoId, recetasProducto as any);
-    fetchRecetas();
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const payload = {
+      productoId: form.productoId,
+      insumosId: [form.insumoId],
+      cantidades: [form.cantidad],
+      unidadesMedida: [form.unidadMedida],
+    };
+
+    if (editingId) {
+      await updateReceta(form.productoId, payload as any);
+    } else {
+      await createReceta(payload as any);
+    }
+
+    await fetchRecetas();
+    reset();
   };
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Gestión de Recetas</h2>
-
-        <Card><CardHeader><CardTitle>Formulario (RecetaRequest)</CardTitle></CardHeader><CardContent>
-          <form onSubmit={guardar} className="grid md:grid-cols-4 gap-2">
-            <select className="border rounded px-2" value={form.productoId} onChange={(e) => setForm({ ...form, productoId: Number(e.target.value) })}>
-              <option value={0}>productoId</option>{productos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-            </select>
-            <select className="border rounded px-2" value={form.insumoId} onChange={(e) => setForm({ ...form, insumoId: Number(e.target.value) })}>
-              <option value={0}>insumoId</option>{insumos.map(i => <option key={i.id} value={i.id}>{i.nombre}</option>)}
-            </select>
-            <Input type="number" step="0.01" placeholder="cantidad" value={form.cantidad} onChange={(e) => setForm({ ...form, cantidad: Number(e.target.value) })} />
-            <Input placeholder="unidadMedida" value={form.unidadMedida} onChange={(e) => setForm({ ...form, unidadMedida: e.target.value })} />
-            <div className="md:col-span-4"><Button type="submit">Guardar</Button></div>
-          </form>
-        </CardContent></Card>
-
-        <Card><CardHeader><CardTitle>Listado (RecetaResponse)</CardTitle></CardHeader><CardContent>
-          <div className="flex gap-2 mb-3">
-            <Input placeholder="Buscar por producto o insumo" value={search} onChange={(e)=>{setSearch(e.target.value);setPage(1);}} />
-            <select className="border rounded px-2" value={productoFilter} onChange={(e)=>{setProductoFilter(Number(e.target.value));setPage(1);}}>
-              <option value={0}>Todos los productos</option>{productos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
-            </select>
-          </div>
-          <table className="w-full text-sm border">
-            <thead><tr className="bg-gray-50"><th className="p-2 border">id</th><th className="p-2 border">productoId</th><th className="p-2 border">productoNombre</th><th className="p-2 border">insumoId</th><th className="p-2 border">insumoNombre</th><th className="p-2 border">cantidad</th><th className="p-2 border">unidadMedida</th><th className="p-2 border">acciones</th></tr></thead>
-            <tbody>{rows.map(r => <tr key={r.id}><td className="p-2 border">{r.id}</td><td className="p-2 border">{r.productoId}</td><td className="p-2 border">{r.productoNombre}</td><td className="p-2 border">{r.insumoId}</td><td className="p-2 border">{r.insumoNombre}</td><td className="p-2 border">{r.cantidad}</td><td className="p-2 border">{r.unidadMedida}</td><td className="p-2 border"><Button size="sm" variant="outline" onClick={()=>{setForm({ productoId: r.productoId, insumoId: r.insumoId, cantidad: r.cantidad, unidadMedida: r.unidadMedida });}}>Actualizar</Button> <Button size="sm" variant="secondary" onClick={()=>actualizarProducto(r.productoId)}>Guardar update producto</Button></td></tr>)}</tbody>
+      <AdminCrudLayout
+        title="Recetas"
+        subtitle="Gestión de recetas (crear y actualizar) para productos preparados."
+        search={search}
+        onSearch={setSearch}
+        onCreate={() => setOpen(true)}
+        filters={(
+          <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={productoFilter} onChange={(e) => setProductoFilter(Number(e.target.value))}>
+            <option value={0}>Todos los productos</option>
+            {productos.map((product) => <option key={product.id} value={product.id}>{product.nombre}</option>)}
+          </select>
+        )}
+      >
+        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-3 text-left">Producto</th>
+                <th className="px-4 py-3 text-left">Insumo</th>
+                <th className="px-4 py-3 text-left">Cantidad</th>
+                <th className="px-4 py-3 text-left">Unidad</th>
+                <th className="px-4 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((recipe) => (
+                <tr key={recipe.id} className="even:bg-slate-50/30">
+                  <td className="px-4 py-3 font-medium">{recipe.productoNombre}</td>
+                  <td className="px-4 py-3">{recipe.insumoNombre}</td>
+                  <td className="px-4 py-3">{recipe.cantidad}</td>
+                  <td className="px-4 py-3">{recipe.unidadMedida}</td>
+                  <td className="px-4 py-3 text-right">
+                    <RowActions
+                      onEdit={() => {
+                        setEditingId(recipe.id);
+                        setForm({
+                          productoId: recipe.productoId,
+                          insumoId: recipe.insumoId,
+                          cantidad: recipe.cantidad,
+                          unidadMedida: recipe.unidadMedida,
+                        });
+                        setOpen(true);
+                      }}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </table>
-          <div className="flex justify-end gap-2 mt-3"><Button variant="outline" size="sm" disabled={page===1} onClick={()=>setPage(p=>p-1)}>Anterior</Button><span>{page}/{totalPages}</span><Button variant="outline" size="sm" disabled={page===totalPages} onClick={()=>setPage(p=>p+1)}>Siguiente</Button></div>
-        </CardContent></Card>
-      </div>
+        </section>
+      </AdminCrudLayout>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Editar receta' : 'Nueva receta'}</DialogTitle>
+            <DialogDescription>Define el producto, insumo y cantidades para la receta.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submit} className="grid gap-3 md:grid-cols-2">
+            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.productoId} onChange={(e) => setForm({ ...form, productoId: Number(e.target.value) })}>
+              <option value={0}>Selecciona producto</option>
+              {productos.map((product) => <option key={product.id} value={product.id}>{product.nombre}</option>)}
+            </select>
+            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.insumoId} onChange={(e) => setForm({ ...form, insumoId: Number(e.target.value) })}>
+              <option value={0}>Selecciona insumo</option>
+              {insumos.map((supply) => <option key={supply.id} value={supply.id}>{supply.nombre}</option>)}
+            </select>
+            <Input type="number" step="0.01" placeholder="Cantidad" value={form.cantidad} onChange={(e) => setForm({ ...form, cantidad: Number(e.target.value) })} />
+            <Input placeholder="Unidad de medida" value={form.unidadMedida} onChange={(e) => setForm({ ...form, unidadMedida: e.target.value.toUpperCase() })} />
+            <DialogFooter className="md:col-span-2">
+              <Button type="button" variant="outline" onClick={reset}>Cancelar</Button>
+              <Button type="submit" className="bg-amber-600 hover:bg-amber-700">Guardar</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

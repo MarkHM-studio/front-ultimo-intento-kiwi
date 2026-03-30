@@ -1,56 +1,141 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/components/common/MainLayout';
 import { useAdminStore, useComprobanteStore } from '@/stores';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
+import { RowActions } from '@/pages/admin/components/RowActions';
 import type { MesaRequest } from '@/types';
 
-const PAGE_SIZE = 8;
+const initialForm: MesaRequest = { nombre: '' };
 
 export const Mesas: React.FC = () => {
   const { mesas, fetchMesas, createMesa, updateMesa, deleteMesa } = useAdminStore();
   const { mesasOcupadas, fetchMesasOcupadas } = useComprobanteStore();
-  const [form, setForm] = useState<MesaRequest>({ nombre: '' });
-  const [editingId, setEditingId] = useState<number | null>(null);
   const [search, setSearch] = useState('');
-  const [estadoFilter, setEstadoFilter] = useState('TODOS');
-  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('TODOS');
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<MesaRequest>(initialForm);
 
-  useEffect(() => { fetchMesas(); fetchMesasOcupadas(); }, []);
-  const filtered = useMemo(() => mesas.filter(m => {
-    const matchSearch = m.nombre.toLowerCase().includes(search.toLowerCase());
-    const matchEstado = estadoFilter === 'TODOS' || m.estado === estadoFilter;
-    return matchSearch && matchEstado;
-  }), [mesas, search, estadoFilter]);
+  useEffect(() => {
+    fetchMesas();
+    fetchMesasOcupadas();
+  }, [fetchMesas, fetchMesasOcupadas]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const rows = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+  const filtered = useMemo(() => mesas.filter((table) => {
+    const bySearch = table.nombre.toLowerCase().includes(search.toLowerCase());
+    const byStatus = statusFilter === 'TODOS' || table.estado === statusFilter;
+    return bySearch && byStatus;
+  }), [mesas, search, statusFilter]);
 
-  const guardar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingId) await updateMesa(editingId, form); else await createMesa(form);
-    setEditingId(null); setForm({ nombre: '' }); fetchMesas();
+  const reset = () => {
+    setEditingId(null);
+    setForm(initialForm);
+    setOpen(false);
   };
 
-  return <MainLayout><div className="space-y-6"><h2 className="text-2xl font-bold">Gestión de Mesas</h2>
-    <Card><CardHeader><CardTitle>Formulario (MesaRequest)</CardTitle></CardHeader><CardContent>
-      <form className="flex gap-2" onSubmit={guardar}><Input placeholder="nombre" value={form.nombre} onChange={e=>setForm({nombre:e.target.value})} /><Button type="submit">Guardar</Button>{editingId && <Button type="button" variant="outline" onClick={()=>{setEditingId(null);setForm({nombre:''});}}>Cancelar</Button>}</form>
-    </CardContent></Card>
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (editingId) await updateMesa(editingId, form);
+    else await createMesa(form);
+    await fetchMesas();
+    reset();
+  };
 
-    <Card><CardHeader><CardTitle>Listado (MesaResponse)</CardTitle></CardHeader><CardContent>
-      <div className="flex gap-2 mb-3"><Input placeholder="Buscar por nombre" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} />
-      <select className="border rounded px-2" value={estadoFilter} onChange={e=>{setEstadoFilter(e.target.value);setPage(1);}}><option value="TODOS">Todos</option><option value="OCUPADO">OCUPADO</option><option value="DESOCUPADO">DESOCUPADO</option></select></div>
-      <table className="w-full text-sm border"><thead><tr className="bg-gray-50"><th className="p-2 border">id</th><th className="p-2 border">nombre</th><th className="p-2 border">estado</th><th className="p-2 border">acciones</th></tr></thead>
-      <tbody>{rows.map(m=><tr key={m.id}><td className="p-2 border">{m.id}</td><td className="p-2 border">{m.nombre}</td><td className="p-2 border">{m.estado}</td><td className="p-2 border"><Button size="sm" variant="outline" onClick={()=>{setEditingId(m.id);setForm({nombre:m.nombre});}}>Actualizar</Button> <Button size="sm" variant="destructive" onClick={()=>deleteMesa(m.id)}>Eliminar</Button></td></tr>)}</tbody></table>
-      <div className="flex justify-end gap-2 mt-3"><Button variant="outline" size="sm" disabled={page===1} onClick={()=>setPage(p=>p-1)}>Anterior</Button><span>{page}/{totalPages}</span><Button variant="outline" size="sm" disabled={page===totalPages} onClick={()=>setPage(p=>p+1)}>Siguiente</Button></div>
-    </CardContent></Card>
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        <AdminCrudLayout
+          title="Mesas"
+          subtitle="Gestión completa de mesas del local (crear, editar y eliminar)."
+          search={search}
+          onSearch={setSearch}
+          onCreate={() => setOpen(true)}
+          filters={(
+            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+              <option value="TODOS">Todos los estados</option>
+              <option value="OCUPADO">Ocupado</option>
+              <option value="DESOCUPADO">Desocupado</option>
+            </select>
+          )}
+        >
+          <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="px-4 py-3 text-left">Mesa</th>
+                  <th className="px-4 py-3 text-left">Estado</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((table) => (
+                  <tr key={table.id} className="even:bg-slate-50/30">
+                    <td className="px-4 py-3 font-medium">{table.nombre}</td>
+                    <td className="px-4 py-3">{table.estado}</td>
+                    <td className="px-4 py-3 text-right">
+                      <RowActions
+                        onEdit={() => {
+                          setEditingId(table.id);
+                          setForm({ nombre: table.nombre });
+                          setOpen(true);
+                        }}
+                        onDelete={async () => {
+                          await deleteMesa(table.id);
+                          await fetchMesas();
+                        }}
+                      />
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </section>
+        </AdminCrudLayout>
 
-    <Card><CardHeader><CardTitle>Mesas ocupadas</CardTitle></CardHeader><CardContent>
-      <table className="w-full text-sm border"><thead><tr className="bg-gray-50"><th className="p-2 border">mesaId</th><th className="p-2 border">nombre</th><th className="p-2 border">grupoId</th><th className="p-2 border">estadoMesa</th><th className="p-2 border">comprobanteId</th><th className="p-2 border">estadoComprobante</th></tr></thead>
-      <tbody>{mesasOcupadas.map((m:any)=><tr key={m.mesaId}><td className="p-2 border">{m.mesaId}</td><td className="p-2 border">{m.nombre || m.mesaNombre}</td><td className="p-2 border">{m.grupoId}</td><td className="p-2 border">{m.estadoMesa}</td><td className="p-2 border">{m.comprobanteId}</td><td className="p-2 border">{m.estadoComprobante || '-'}</td></tr>)}</tbody></table>
-    </CardContent></Card>
-  </div></MainLayout>;
+        <Card className="rounded-2xl p-4">
+          <h3 className="mb-3 text-base font-semibold">Mesas ocupadas</h3>
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-2 text-left">Mesa</th>
+                <th className="px-4 py-2 text-left">Grupo</th>
+                <th className="px-4 py-2 text-left">Comprobante</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mesasOcupadas.map((table: any) => (
+                <tr key={table.mesaId} className="even:bg-slate-50/30">
+                  <td className="px-4 py-2">{table.nombre || table.mesaNombre}</td>
+                  <td className="px-4 py-2">Grupo #{table.grupoId}</td>
+                  <td className="px-4 py-2">Comprobante #{table.comprobanteId}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Editar mesa' : 'Nueva mesa'}</DialogTitle>
+            <DialogDescription>Ingresa el nombre de la mesa.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submit} className="space-y-3">
+            <Input placeholder="Nombre de mesa" value={form.nombre} onChange={(e) => setForm({ nombre: e.target.value })} />
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={reset}>Cancelar</Button>
+              <Button type="submit" className="bg-amber-600 hover:bg-amber-700">Guardar</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </MainLayout>
+  );
 };
 
 export default Mesas;

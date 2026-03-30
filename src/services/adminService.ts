@@ -143,6 +143,10 @@ export const adminService = {
     await api.delete(`/usuario/${id}`);
   },
 
+  activateUsuario: async (id: number): Promise<void> => {
+    await api.patch(`/usuario/${id}/activar`);
+  },
+
   // ============ CLIENTES ============
   getClientes: async (): Promise<Cliente[]> => {
     const response = await api.get<Cliente[]>('/cliente');
@@ -163,6 +167,10 @@ export const adminService = {
     await api.delete(`/cliente/${id}`);
   },
 
+  activateCliente: async (id: number): Promise<void> => {
+    await api.patch(`/cliente/${id}/activar`);
+  },
+
   // ============ TRABAJADORES ============
   getTrabajadores: async (): Promise<Trabajador[]> => {
     const response = await api.get<Trabajador[]>('/trabajador');
@@ -181,6 +189,10 @@ export const adminService = {
 
   deleteTrabajador: async (id: number): Promise<void> => {
     await api.delete(`/trabajador/${id}`);
+  },
+
+  activateTrabajador: async (id: number): Promise<void> => {
+    await api.patch(`/trabajador/${id}/activar`);
   },
 
   // ============ MESAS ============

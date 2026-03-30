@@ -24,6 +24,7 @@ import { Proveedores } from '@/pages/admin/Proveedores';
 import { Clientes } from '@/pages/admin/Clientes';
 import { Trabajadores } from '@/pages/admin/Trabajadores';
 import { Mesas } from '@/pages/admin/Mesas';
+import { Reportes } from '@/pages/admin/Reportes';
 
 // Mozo pages
 import { MozoDashboard } from '@/pages/mozo/MozoDashboard';
@@ -192,6 +193,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
               <Mesas />
+            </ProtectedRoute>
+          }
+        />
+         <Route
+          path="/admin/reportes"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Reportes />
             </ProtectedRoute>
           }
         />

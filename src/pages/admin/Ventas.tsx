@@ -1,48 +1,88 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/components/common/MainLayout';
 import { useComprobanteStore } from '@/stores';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-const PAGE_SIZE = 8;
 
 export const Ventas: React.FC = () => {
   const { comprobantes, comprobanteActual, fetchComprobantes, fetchComprobanteById } = useComprobanteStore();
   const [search, setSearch] = useState('');
-  const [estadoFilter, setEstadoFilter] = useState('TODOS');
-  const [page, setPage] = useState(1);
+  const [status, setStatus] = useState('TODOS');
 
-  useEffect(() => { fetchComprobantes(); }, []);
+  useEffect(() => { fetchComprobantes(); }, [fetchComprobantes]);
 
-  const filtered = useMemo(() => comprobantes.filter(c => {
-    const matchSearch = `${c.id} ${c.total}`.toLowerCase().includes(search.toLowerCase());
-    const matchEstado = estadoFilter === 'TODOS' || c.estado === estadoFilter;
-    return matchSearch && matchEstado;
-  }), [comprobantes, search, estadoFilter]);
+  const filtered = useMemo(() => comprobantes.filter((voucher) => {
+    const date = (voucher.fechaHoraVenta || voucher.fechaHoraApertura || '').slice(0, 10);
+    const bySearch = `${voucher.id} ${voucher.total} ${date}`.toLowerCase().includes(search.toLowerCase());
+    const byStatus = status === 'TODOS' || voucher.estado === status;
+    return bySearch && byStatus;
+  }), [comprobantes, search, status]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const rows = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+  return (
+    <MainLayout>
+      <div className="space-y-6">
+        <section className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-emerald-800 p-6 text-white shadow-lg">
+          <h2 className="text-2xl font-bold">Ventas</h2>
+          <p className="mt-1 text-sm text-white/80">Visualiza comprobantes y consulta el detalle individual de cada venta.</p>
+        </section>
 
-  return <MainLayout><div className="space-y-6"><h2 className="text-2xl font-bold">Visualización de Comprobantes</h2>
-    <Card><CardHeader><CardTitle>Comprobantes (solo lectura)</CardTitle></CardHeader><CardContent>
-      <div className="flex gap-2 mb-3"><Input placeholder="Buscar por id o total" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} />
-        <select className="border rounded px-2" value={estadoFilter} onChange={e=>{setEstadoFilter(e.target.value);setPage(1);}}><option value="TODOS">Todos</option><option value="ABIERTO">ABIERTO</option><option value="PAGADO">PAGADO</option><option value="CANCELADO">CANCELADO</option></select>
+        <Card className="rounded-2xl p-4">
+          <div className="flex flex-col gap-3 md:flex-row">
+            <Input placeholder="Buscar por ID, total o fecha" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="TODOS">Todos los estados</option>
+              <option value="ABIERTO">Abierto</option>
+              <option value="PAGADO">Pagado</option>
+              <option value="CANCELADO">Cancelado</option>
+            </select>
+          </div>
+        </Card>
+
+        <Card className="overflow-hidden rounded-2xl">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-3 text-left">Comprobante</th>
+                <th className="px-4 py-3 text-left">Fecha venta</th>
+                <th className="px-4 py-3 text-left">Total</th>
+                <th className="px-4 py-3 text-left">Estado</th>
+                <th className="px-4 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((voucher) => (
+                <tr key={voucher.id} className="even:bg-slate-50/30">
+                  <td className="px-4 py-3 font-medium">Comprobante #{voucher.id}</td>
+                  <td className="px-4 py-3">{voucher.fechaHoraVenta || '-'}</td>
+                  <td className="px-4 py-3">S/ {Number(voucher.total).toFixed(2)}</td>
+                  <td className="px-4 py-3">{voucher.estado}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Button variant="outline" size="sm" onClick={() => fetchComprobanteById(voucher.id)}>Ver detalle</Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Card>
+
+        <Card className="rounded-2xl p-5">
+          <h3 className="mb-3 text-base font-semibold">Detalle seleccionado</h3>
+          {!comprobanteActual ? (
+            <p className="text-sm text-slate-500">Selecciona un comprobante para visualizar el detalle.</p>
+          ) : (
+            <div className="grid gap-3 text-sm md:grid-cols-2">
+              <p><strong>ID:</strong> {comprobanteActual.id}</p>
+              <p><strong>Estado:</strong> {comprobanteActual.estado}</p>
+              <p><strong>Total:</strong> S/ {Number(comprobanteActual.total).toFixed(2)}</p>
+              <p><strong>IGV:</strong> S/ {Number(comprobanteActual.igv).toFixed(2)}</p>
+              <p className="md:col-span-2"><strong>Fecha de venta:</strong> {comprobanteActual.fechaHoraVenta || '-'}</p>
+            </div>
+          )}
+        </Card>
       </div>
-      <table className="w-full text-sm border"><thead><tr className="bg-gray-50"><th className="p-2 border">id</th><th className="p-2 border">total</th><th className="p-2 border">IGV</th><th className="p-2 border">fechaHora_venta</th><th className="p-2 border">estado</th><th className="p-2 border">acciones</th></tr></thead>
-      <tbody>{rows.map(c=><tr key={c.id}><td className="p-2 border">{c.id}</td><td className="p-2 border">{c.total}</td><td className="p-2 border">{(c as any).IGV ?? c.igv}</td><td className="p-2 border">{(c as any).fechaHora_venta ?? c.fechaHoraVenta ?? '-'}</td><td className="p-2 border">{c.estado}</td><td className="p-2 border"><Button size="sm" variant="outline" onClick={()=>fetchComprobanteById(c.id)}>Ver detalle</Button></td></tr>)}</tbody></table>
-      <div className="flex justify-end gap-2 mt-3"><Button variant="outline" size="sm" disabled={page===1} onClick={()=>setPage(p=>p-1)}>Anterior</Button><span>{page}/{totalPages}</span><Button variant="outline" size="sm" disabled={page===totalPages} onClick={()=>setPage(p=>p+1)}>Siguiente</Button></div>
-    </CardContent></Card>
-
-    <Card><CardHeader><CardTitle>Detalle seleccionado</CardTitle></CardHeader><CardContent>
-      {!comprobanteActual ? <p className="text-gray-500">Selecciona un comprobante.</p> :
-      <table className="w-full text-sm border"><tbody>
-        <tr><td className="p-2 border font-medium">id</td><td className="p-2 border">{comprobanteActual.id}</td></tr>
-        <tr><td className="p-2 border font-medium">total</td><td className="p-2 border">{comprobanteActual.total}</td></tr>
-        <tr><td className="p-2 border font-medium">estado</td><td className="p-2 border">{comprobanteActual.estado}</td></tr>
-      </tbody></table>}
-    </CardContent></Card>
-  </div></MainLayout>;
+    </MainLayout>
+  );
 };
 
 export default Ventas;

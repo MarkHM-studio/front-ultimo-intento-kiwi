@@ -1,76 +1,116 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/components/common/MainLayout';
 import { useAdminStore } from '@/stores';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
+import { RowActions } from '@/pages/admin/components/RowActions';
 import type { InsumoRequest } from '@/types';
 
-const PAGE_SIZE = 6;
+const initialForm: InsumoRequest = { nombre: '', precio: 0, stock: 0, unidadMedida: 'KG', marcaId: undefined };
 
 export const Insumos: React.FC = () => {
-  const { insumos, marcas, fetchInsumos, fetchMarcas, createInsumo, updateInsumo, isLoading } = useAdminStore();
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const { insumos, marcas, fetchInsumos, fetchMarcas, createInsumo, updateInsumo } = useAdminStore();
   const [search, setSearch] = useState('');
-  const [unidadFilter, setUnidadFilter] = useState('TODOS');
-  const [page, setPage] = useState(1);
-  const [form, setForm] = useState<InsumoRequest>({ nombre: '', precio: 0, stock: 0, unidadMedida: 'KG', marcaId: undefined });
+  const [unitFilter, setUnitFilter] = useState('TODOS');
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<InsumoRequest>(initialForm);
 
-  useEffect(() => { fetchInsumos(); fetchMarcas(); }, []);
+  useEffect(() => { fetchInsumos(); fetchMarcas(); }, [fetchInsumos, fetchMarcas]);
 
-  const filtered = useMemo(() => insumos.filter(i => {
-    const matchSearch = i.nombre.toLowerCase().includes(search.toLowerCase());
-    const matchUnidad = unidadFilter === 'TODOS' || i.unidadMedida === unidadFilter;
-    return matchSearch && matchUnidad;
-  }), [insumos, search, unidadFilter]);
+  const filtered = useMemo(() => insumos.filter((supply) => {
+    const bySearch = supply.nombre.toLowerCase().includes(search.toLowerCase());
+    const byUnit = unitFilter === 'TODOS' || supply.unidadMedida === unitFilter;
+    return bySearch && byUnit;
+  }), [insumos, search, unitFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const rows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const reset = () => {
+    setEditingId(null);
+    setForm(initialForm);
+    setOpen(false);
+  };
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (editingId) await updateInsumo(editingId, form, true);
     else await createInsumo(form);
-    setEditingId(null);
-    setForm({ nombre: '', precio: 0, stock: 0, unidadMedida: 'KG', marcaId: undefined });
-    fetchInsumos();
+    await fetchInsumos();
+    reset();
   };
 
   return (
     <MainLayout>
-      <div className="space-y-6">
-        <h2 className="text-2xl font-bold">Gestión de Insumos</h2>
-        <Card><CardHeader><CardTitle>Formulario (InsumoRequest)</CardTitle></CardHeader><CardContent>
-          <form onSubmit={submit} className="grid md:grid-cols-5 gap-2">
-            <Input placeholder="nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
-            <Input type="number" step="0.01" placeholder="precio" value={form.precio} onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })} />
-            <Input type="number" step="0.01" placeholder="stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
-            <Input placeholder="unidadMedida" value={form.unidadMedida} onChange={(e) => setForm({ ...form, unidadMedida: e.target.value })} />
-            <select className="border rounded px-2" value={form.marcaId || 0} onChange={(e) => setForm({ ...form, marcaId: Number(e.target.value) || undefined })}>
-              <option value={0}>sin marca</option>
-              {marcas.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
-            </select>
-            <div className="md:col-span-5 flex gap-2">
-              <Button type="submit" disabled={isLoading}>Guardar</Button>
-              {editingId && <Button type="button" variant="outline" onClick={() => { setEditingId(null); setForm({ nombre: '', precio: 0, stock: 0, unidadMedida: 'KG', marcaId: undefined }); }}>Cancelar</Button>}
-            </div>
-          </form>
-        </CardContent></Card>
-
-        <Card><CardHeader><CardTitle>Listado (InsumoResponse)</CardTitle></CardHeader><CardContent>
-          <div className="flex gap-2 mb-3">
-            <Input placeholder="Buscar por nombre" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
-            <select className="border rounded px-2" value={unidadFilter} onChange={(e) => { setUnidadFilter(e.target.value); setPage(1); }}>
-              <option value="TODOS">Todas unidades</option><option value="KG">KG</option><option value="L">L</option><option value="UDS">UDS</option>
-            </select>
-          </div>
-          <table className="w-full text-sm border">
-            <thead><tr className="bg-gray-50"><th className="p-2 border">id</th><th className="p-2 border">nombre</th><th className="p-2 border">precio</th><th className="p-2 border">stock</th><th className="p-2 border">unidadMedida</th><th className="p-2 border">marcaId</th><th className="p-2 border">acciones</th></tr></thead>
-            <tbody>{rows.map(i => <tr key={i.id}><td className="p-2 border">{i.id}</td><td className="p-2 border">{i.nombre}</td><td className="p-2 border">{i.precio}</td><td className="p-2 border">{i.stock}</td><td className="p-2 border">{i.unidadMedida}</td><td className="p-2 border">{i.marca?.id || '-'}</td><td className="p-2 border"><Button size="sm" variant="outline" onClick={() => { setEditingId(i.id); setForm({ nombre: i.nombre, precio: Number(i.precio), stock: Number(i.stock), unidadMedida: i.unidadMedida, marcaId: i.marca?.id }); }}>Actualizar</Button></td></tr>)}</tbody>
+      <AdminCrudLayout
+        title="Insumos"
+        subtitle="Gestión de insumos con precios, unidades y stock actual para operaciones de almacén."
+        search={search}
+        onSearch={setSearch}
+        onCreate={() => setOpen(true)}
+        filters={(
+          <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={unitFilter} onChange={(e) => setUnitFilter(e.target.value)}>
+            <option value="TODOS">Todas las unidades</option>
+            <option value="KG">KG</option>
+            <option value="L">L</option>
+            <option value="UDS">UDS</option>
+          </select>
+        )}
+      >
+        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-3 text-left">Insumo</th>
+                <th className="px-4 py-3 text-left">Unidad</th>
+                <th className="px-4 py-3 text-left">Precio</th>
+                <th className="px-4 py-3 text-left">Stock</th>
+                <th className="px-4 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((supply) => (
+                <tr key={supply.id} className="even:bg-slate-50/30">
+                  <td className="px-4 py-3 font-medium">{supply.nombre}<div className="text-xs text-slate-500">Marca: {supply.marca?.nombre || 'Sin marca'}</div></td>
+                  <td className="px-4 py-3">{supply.unidadMedida}</td>
+                  <td className="px-4 py-3">S/ {Number(supply.precio).toFixed(2)}</td>
+                  <td className="px-4 py-3">{supply.stock}</td>
+                  <td className="px-4 py-3 text-right">
+                    <RowActions onEdit={() => {
+                      setEditingId(supply.id);
+                      setForm({ nombre: supply.nombre, precio: Number(supply.precio), stock: Number(supply.stock), unidadMedida: supply.unidadMedida, marcaId: supply.marca?.id });
+                      setOpen(true);
+                    }} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
           </table>
-          <div className="flex justify-end gap-2 mt-3"><Button variant="outline" size="sm" disabled={page===1} onClick={()=>setPage(p=>p-1)}>Anterior</Button><span>{page}/{totalPages}</span><Button variant="outline" size="sm" disabled={page===totalPages} onClick={()=>setPage(p=>p+1)}>Siguiente</Button></div>
-        </CardContent></Card>
-      </div>
+        </section>
+      </AdminCrudLayout>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Editar insumo' : 'Nuevo insumo'}</DialogTitle>
+            <DialogDescription>Completa el formulario para registrar el insumo.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submit} className="grid gap-3 md:grid-cols-2">
+            <Input placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+            <Input type="number" step="0.01" placeholder="Precio" value={form.precio} onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })} />
+            <Input type="number" placeholder="Stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
+            <Input placeholder="Unidad de medida" value={form.unidadMedida} onChange={(e) => setForm({ ...form, unidadMedida: e.target.value.toUpperCase() })} />
+            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.marcaId || 0} onChange={(e) => setForm({ ...form, marcaId: Number(e.target.value) || undefined })}>
+              <option value={0}>Sin marca</option>
+              {marcas.map((brand) => <option key={brand.id} value={brand.id}>{brand.nombre}</option>)}
+            </select>
+            <DialogFooter className="md:col-span-2">
+              <Button type="button" variant="outline" onClick={reset}>Cancelar</Button>
+              <Button type="submit" className="bg-amber-600 hover:bg-amber-700">Guardar</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

@@ -1,54 +1,154 @@
 import { useEffect, useMemo, useState } from 'react';
 import { MainLayout } from '@/components/common/MainLayout';
 import { useAdminStore } from '@/stores';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AdminCrudLayout } from './components/AdminCrudLayout';
+import { RowActions } from './components/RowActions';
 import type { ClienteRequest } from '@/types';
+import api from '@/services/api';
+import type { Distrito } from '@/types';
 
-const PAGE_SIZE = 6;
-const initialForm: ClienteRequest = { nombre:'', apellido:'', fechaNacimiento:'', telefono:'', correo:'', distritoId:1, usuarioId:1 };
+const initialForm: ClienteRequest = {
+  nombre: '', apellido: '', fechaNacimiento: '', telefono: '', correo: '', distritoId: 1, usuarioId: 1,
+};
 
 export const Clientes: React.FC = () => {
-  const { clientes, fetchClientes, createCliente, updateCliente, deleteCliente } = useAdminStore();
-  const [form, setForm] = useState<ClienteRequest>(initialForm);
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const { clientes, fetchClientes, createCliente, updateCliente, deleteCliente, activateCliente } = useAdminStore();
+  const [distritos, setDistritos] = useState<Distrito[]>([]);
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState<'ACTIVO' | 'INACTIVO'>('ACTIVO');
+  const [open, setOpen] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [form, setForm] = useState<ClienteRequest>(initialForm);
 
-  useEffect(() => { fetchClientes(); }, []);
-  const filtered = useMemo(() => clientes.filter(c => (`${c.nombre} ${c.apellido} ${c.correo}`).toLowerCase().includes(search.toLowerCase())), [clientes, search]);
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const rows = filtered.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+  useEffect(() => {
+    fetchClientes();
+    const fetchDistritos = async () => {
+      try {
+        const response = await api.get<Distrito[]>('/distrito');
+        setDistritos(response.data);
+      } catch (error) {
+        console.error('Error cargando distritos', error);
+      }
+    };
+    fetchDistritos();
+  }, [fetchClientes]);
 
-  const guardar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (editingId) await updateCliente(editingId, form);
-    else await createCliente(form);
-    setForm(initialForm); setEditingId(null); fetchClientes();
+  const filtered = useMemo(() => clientes.filter((client: any) =>
+    `${client.nombre} ${client.apellido} ${client.correo} ${client.telefono}`.toLowerCase().includes(search.toLowerCase()) &&
+    ((client.estado || 'ACTIVO') === statusFilter),
+  ), [clientes, search, statusFilter]);
+
+  const reset = () => {
+    setForm(initialForm);
+    setEditingId(null);
+    setOpen(false);
   };
 
-  return <MainLayout><div className="space-y-6"><h2 className="text-2xl font-bold">Gestión de Clientes</h2>
-    <Card><CardHeader><CardTitle>Formulario (ClienteRequest)</CardTitle></CardHeader><CardContent>
-      <form onSubmit={guardar} className="grid md:grid-cols-4 gap-2">
-        <Input placeholder="nombre" value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})} />
-        <Input placeholder="apellido" value={form.apellido} onChange={e=>setForm({...form,apellido:e.target.value})} />
-        <Input type="date" value={form.fechaNacimiento} onChange={e=>setForm({...form,fechaNacimiento:e.target.value})} />
-        <Input placeholder="telefono" value={form.telefono} onChange={e=>setForm({...form,telefono:e.target.value})} />
-        <Input placeholder="correo" value={form.correo} onChange={e=>setForm({...form,correo:e.target.value})} />
-        <Input type="number" placeholder="distritoId" value={form.distritoId} onChange={e=>setForm({...form,distritoId:Number(e.target.value)})} />
-        <Input type="number" placeholder="usuarioId" value={form.usuarioId} onChange={e=>setForm({...form,usuarioId:Number(e.target.value)})} />
-        <div className="md:col-span-4 flex gap-2"><Button type="submit">Guardar</Button>{editingId && <Button type="button" variant="outline" onClick={()=>{setEditingId(null);setForm(initialForm);}}>Cancelar</Button>}</div>
-      </form>
-    </CardContent></Card>
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (editingId) await updateCliente(editingId, form);
+    else await createCliente(form);
+    await fetchClientes();
+    reset();
+  };
 
-    <Card><CardHeader><CardTitle>Listado (ClienteResponse)</CardTitle></CardHeader><CardContent>
-      <Input className="mb-3" placeholder="Buscar" value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}} />
-      <table className="w-full text-sm border"><thead><tr className="bg-gray-50"><th className="p-2 border">id</th><th className="p-2 border">nombre</th><th className="p-2 border">apellido</th><th className="p-2 border">correo</th><th className="p-2 border">telefono</th><th className="p-2 border">distrito</th><th className="p-2 border">acciones</th></tr></thead>
-      <tbody>{rows.map(c=><tr key={c.id}><td className="p-2 border">{c.id}</td><td className="p-2 border">{c.nombre}</td><td className="p-2 border">{c.apellido}</td><td className="p-2 border">{c.correo}</td><td className="p-2 border">{c.telefono}</td><td className="p-2 border">{(c as any).distrito?.nombre || (c as any).distrito || '-'}</td><td className="p-2 border"><Button size="sm" variant="outline" onClick={()=>{setEditingId(c.id);setForm({ nombre:c.nombre, apellido:c.apellido, fechaNacimiento:c.fechaNacimiento, telefono:c.telefono, correo:c.correo, distritoId:(c as any).distrito?.id||1, usuarioId:(c as any).usuario?.id||1 });}}>Actualizar</Button> <Button size="sm" variant="destructive" onClick={()=>deleteCliente(c.id)}>Eliminar</Button></td></tr>)}</tbody></table>
-      <div className="flex justify-end gap-2 mt-3"><Button variant="outline" size="sm" disabled={page===1} onClick={()=>setPage(p=>p-1)}>Anterior</Button><span>{page}/{totalPages}</span><Button variant="outline" size="sm" disabled={page===totalPages} onClick={()=>setPage(p=>p+1)}>Siguiente</Button></div>
-    </CardContent></Card>
-  </div></MainLayout>;
+  return (
+    <MainLayout>
+      <AdminCrudLayout
+        title="Clientes"
+        subtitle="Gestión completa de clientes con datos de contacto y vínculo con usuario."
+        search={search}
+        onSearch={setSearch}
+        onCreate={() => setOpen(true)}
+        filters={(
+          <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'ACTIVO' | 'INACTIVO')}>
+            <option value="ACTIVO">ACTIVOS</option>
+            <option value="INACTIVO">INACTIVOS</option>
+          </select>
+        )}
+      >
+        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-slate-600">
+              <tr>
+                <th className="px-4 py-3 text-left">Cliente</th>
+                <th className="px-4 py-3 text-left">Contacto</th>
+                <th className="px-4 py-3 text-left">Distrito</th>
+                <th className="px-4 py-3 text-right">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((client: any) => (
+                <tr key={client.id} className="even:bg-slate-50/30">
+                  <td className="px-4 py-3 font-medium">{client.nombre} {client.apellido}</td>
+                  <td className="px-4 py-3">{client.correo}<div className="text-xs text-slate-500">{client.telefono}</div></td>
+                  <td className="px-4 py-3">{client.distrito?.nombre || client.distrito || '-'}</td>
+                  <td className="px-4 py-3 text-right">
+                    <RowActions
+                      onEdit={() => {
+                        setEditingId(client.id);
+                        setForm({
+                          nombre: client.nombre,
+                          apellido: client.apellido,
+                          fechaNacimiento: client.fechaNacimiento,
+                          telefono: client.telefono,
+                          correo: client.correo,
+                          distritoId: client.distrito?.id || 1,
+                          usuarioId: client.usuario?.id || client.usuarioId || 1,
+                        });
+                        setOpen(true);
+                      }}
+                      onDelete={client.estado === 'INACTIVO' ? undefined : async () => {
+                        await deleteCliente(client.id);
+                        await fetchClientes();
+                      }}
+                      inactive={client.estado === 'INACTIVO'}
+                      onActivate={async () => {
+                        await activateCliente(client.id);
+                        await fetchClientes();
+                      }}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </section>
+      </AdminCrudLayout>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>{editingId ? 'Editar cliente' : 'Nuevo cliente'}</DialogTitle>
+            <DialogDescription>Completa los campos requeridos por la API de clientes.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={submit} className="grid gap-3 md:grid-cols-2">
+            <Input placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
+            <Input placeholder="Apellido" value={form.apellido} onChange={(e) => setForm({ ...form, apellido: e.target.value })} />
+            <Input type="date" value={form.fechaNacimiento} onChange={(e) => setForm({ ...form, fechaNacimiento: e.target.value })} />
+            <Input placeholder="Teléfono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
+            <Input placeholder="Correo" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
+            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.distritoId} onChange={(e) => setForm({ ...form, distritoId: Number(e.target.value) })}>
+              {distritos.length === 0 && <option value={form.distritoId}>Cargando distritos...</option>}
+              {distritos.map((distrito) => (
+                <option key={distrito.id} value={distrito.id}>
+                  {distrito.id} - {distrito.nombre}
+                </option>
+              ))}
+            </select>
+            <Input type="number" placeholder="ID Usuario" value={form.usuarioId} onChange={(e) => setForm({ ...form, usuarioId: Number(e.target.value) })} />
+            <DialogFooter className="md:col-span-2">
+              <Button type="button" variant="outline" onClick={reset}>Cancelar</Button>
+              <Button type="submit" className="bg-amber-600 hover:bg-amber-700">Guardar</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </MainLayout>
+  );
 };
 
 export default Clientes;
