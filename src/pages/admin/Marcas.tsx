@@ -4,8 +4,8 @@ import { useAdminStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
-import { RowActions } from '@/pages/admin/components/RowActions';
+import { AdminCrudLayout } from './components/AdminCrudLayout';
+import { RowActions } from './components/RowActions';
 
 export const Marcas: React.FC = () => {
   const { marcas, fetchMarcas, createMarca, updateMarca } = useAdminStore();
@@ -13,6 +13,7 @@ export const Marcas: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [nombre, setNombre] = useState('');
+  const formatDate = (value?: string) => value ? new Date(value).toLocaleString('es-PE') : '-';
 
   useEffect(() => { fetchMarcas(); }, [fetchMarcas]);
 
@@ -53,7 +54,7 @@ export const Marcas: React.FC = () => {
               {filtered.map((brand) => (
                 <tr key={brand.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{brand.nombre}</td>
-                  <td className="px-4 py-3">{brand.fechaHoraRegistro || '-'}</td>
+                  <td className="px-4 py-3">{formatDate(brand.fechaHoraActualizacion || brand.fechaHoraRegistro)}</td>
                   <td className="px-4 py-3 text-right">
                     <RowActions onEdit={() => { setEditingId(brand.id); setNombre(brand.nombre); setOpen(true); }} />
                   </td>

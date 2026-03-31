@@ -4,8 +4,8 @@ import { useAdminStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
-import { RowActions } from '@/pages/admin/components/RowActions';
+import { AdminCrudLayout } from './components/AdminCrudLayout';
+import { RowActions } from './components/RowActions';
 
 export const Categorias: React.FC = () => {
   const { categorias, fetchCategorias, createCategoria, updateCategoria } = useAdminStore();
@@ -13,6 +13,7 @@ export const Categorias: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [nombre, setNombre] = useState('');
+  const formatDate = (value?: string) => value ? new Date(value).toLocaleString('es-PE') : '-';
 
   useEffect(() => { fetchCategorias(); }, [fetchCategorias]);
 
@@ -57,7 +58,7 @@ export const Categorias: React.FC = () => {
               {filtered.map((category) => (
                 <tr key={category.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{category.nombre}</td>
-                  <td className="px-4 py-3">{category.fechaHoraActualizacion || '-'}</td>
+                  <td className="px-4 py-3">{formatDate(category.fechaHoraActualizacion || category.fechaHoraRegistro)}</td>
                   <td className="px-4 py-3 text-right">
                     <RowActions onEdit={() => { setEditingId(category.id); setNombre(category.nombre); setOpen(true); }} />
                   </td>

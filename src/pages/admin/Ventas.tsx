@@ -9,6 +9,10 @@ export const Ventas: React.FC = () => {
   const { comprobantes, comprobanteActual, fetchComprobantes, fetchComprobanteById } = useComprobanteStore();
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('TODOS');
+  const formatDate = (value?: string) => value ? new Date(value).toLocaleString('es-PE') : '-';
+  const estadoClass = (value: string) =>
+    value === 'PAGADO' ? 'bg-emerald-100 text-emerald-700' :
+      value === 'ABIERTO' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700';
 
   useEffect(() => { fetchComprobantes(); }, [fetchComprobantes]);
 
@@ -54,9 +58,11 @@ export const Ventas: React.FC = () => {
               {filtered.map((voucher) => (
                 <tr key={voucher.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">Comprobante #{voucher.id}</td>
-                  <td className="px-4 py-3">{voucher.fechaHoraVenta || '-'}</td>
+                  <td className="px-4 py-3">{formatDate(voucher.fechaHoraVenta)}</td>
                   <td className="px-4 py-3">S/ {Number(voucher.total).toFixed(2)}</td>
-                  <td className="px-4 py-3">{voucher.estado}</td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${estadoClass(voucher.estado)}`}>{voucher.estado}</span>
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <Button variant="outline" size="sm" onClick={() => fetchComprobanteById(voucher.id)}>Ver detalle</Button>
                   </td>
@@ -76,7 +82,7 @@ export const Ventas: React.FC = () => {
               <p><strong>Estado:</strong> {comprobanteActual.estado}</p>
               <p><strong>Total:</strong> S/ {Number(comprobanteActual.total).toFixed(2)}</p>
               <p><strong>IGV:</strong> S/ {Number(comprobanteActual.igv).toFixed(2)}</p>
-              <p className="md:col-span-2"><strong>Fecha de venta:</strong> {comprobanteActual.fechaHoraVenta || '-'}</p>
+              <p className="md:col-span-2"><strong>Fecha de venta:</strong> {formatDate(comprobanteActual.fechaHoraVenta)}</p>
             </div>
           )}
         </Card>

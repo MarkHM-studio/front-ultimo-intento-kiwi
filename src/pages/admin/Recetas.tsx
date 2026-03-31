@@ -14,7 +14,7 @@ interface RecetaDetalle {
   unidadMedida: string;
 }
 
-const emptyDetalle: RecetaDetalle = { insumoId: 0, cantidad: 0, unidadMedida: 'G' };
+const emptyDetalle: RecetaDetalle = { insumoId: 0, cantidad: 0, unidadMedida: '' };
 
 export const Recetas: React.FC = () => {
   const { recetas, productos, insumos, fetchRecetas, fetchProductos, fetchInsumos, createReceta, updateReceta } = useAdminStore();
@@ -24,6 +24,7 @@ export const Recetas: React.FC = () => {
   const [editingProductoId, setEditingProductoId] = useState<number | null>(null);
   const [productoId, setProductoId] = useState(0);
   const [detalles, setDetalles] = useState<RecetaDetalle[]>([{ ...emptyDetalle }]);
+  const getUnidadByInsumo = (insumoId: number) => insumos.find((item) => item.id === insumoId)?.unidadMedida?.toUpperCase() || '';
 
   useEffect(() => {
     fetchRecetas();
@@ -79,7 +80,7 @@ export const Recetas: React.FC = () => {
       productoId,
       insumosId: detalles.map((item) => item.insumoId),
       cantidades: detalles.map((item) => item.cantidad),
-      unidadesMedida: detalles.map((item) => item.unidadMedida.toUpperCase()),
+      unidadesMedida: detalles.map((item) => getUnidadByInsumo(item.insumoId) || item.unidadMedida.toUpperCase()),
     };
 
     if (editingProductoId) {
@@ -167,12 +168,21 @@ export const Recetas: React.FC = () => {
 
             {detalles.map((detalle, index) => (
               <div key={index} className="grid gap-2 md:grid-cols-4">
-                <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={detalle.insumoId} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, insumoId: Number(e.target.value) } : item))}>
+                <select
+                  className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+                  value={detalle.insumoId}
+                  onChange={(e) => {
+                    const insumoId = Number(e.target.value);
+                    setDetalles((previous) => previous.map((item, i) =>
+                      i === index ? { ...item, insumoId, unidadMedida: getUnidadByInsumo(insumoId) } : item,
+                    ));
+                  }}
+                >
                   <option value={0}>Insumo</option>
                   {insumos.map((supply) => <option key={supply.id} value={supply.id}>{supply.nombre}</option>)}
                 </select>
                 <Input type="number" step="0.01" placeholder="Cantidad" value={detalle.cantidad} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, cantidad: Number(e.target.value) } : item))} />
-                <Input placeholder="Unidad" value={detalle.unidadMedida} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, unidadMedida: e.target.value.toUpperCase() } : item))} />
+                <Input placeholder="Unidad" disabled value={getUnidadByInsumo(detalle.insumoId) || detalle.unidadMedida || '-'} />
                 <Button type="button" variant="outline" disabled={detalles.length === 1} onClick={() => setDetalles((previous) => previous.filter((_, i) => i !== index))}>Quitar</Button>
               </div>
             ))}
