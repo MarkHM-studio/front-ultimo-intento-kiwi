@@ -4,25 +4,26 @@ import { useAdminStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
-import { RowActions } from '@/pages/admin/components/RowActions';
+import { AdminCrudLayout } from './components/AdminCrudLayout';
+import { RowActions } from './components/RowActions';
+import type { RecetaRequest } from '@/types';
 
-interface RecetaForm {
-  productoId: number;
+interface RecetaDetalle {
   insumoId: number;
   cantidad: number;
   unidadMedida: string;
 }
 
-const initialForm: RecetaForm = { productoId: 0, insumoId: 0, cantidad: 0, unidadMedida: 'KG' };
+const emptyDetalle: RecetaDetalle = { insumoId: 0, cantidad: 0, unidadMedida: 'G' };
 
 export const Recetas: React.FC = () => {
   const { recetas, productos, insumos, fetchRecetas, fetchProductos, fetchInsumos, createReceta, updateReceta } = useAdminStore();
   const [search, setSearch] = useState('');
   const [productoFilter, setProductoFilter] = useState(0);
   const [open, setOpen] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [form, setForm] = useState<RecetaForm>(initialForm);
+  const [editingProductoId, setEditingProductoId] = useState<number | null>(null);
+  const [productoId, setProductoId] = useState(0);
+  const [detalles, setDetalles] = useState<RecetaDetalle[]>([{ ...emptyDetalle }]);
 
   useEffect(() => {
     fetchRecetas();
@@ -32,51 +33,70 @@ export const Recetas: React.FC = () => {
 
   const normalized = useMemo(() => recetas.map((recipe: any) => ({
     id: recipe.id,
-    productoId: recipe.productoId ?? recipe.producto?.id,
+    productoId: Number(recipe.productoId ?? recipe.producto?.id),
     productoNombre: recipe.productoNombre ?? recipe.producto?.nombre ?? '-',
-    insumoId: recipe.insumoId ?? recipe.insumo?.id,
+    insumoId: Number(recipe.insumoId ?? recipe.insumo?.id),
     insumoNombre: recipe.insumoNombre ?? recipe.insumo?.nombre ?? '-',
     cantidad: Number(recipe.cantidad ?? 0),
     unidadMedida: recipe.unidadMedida ?? '-',
   })), [recetas]);
 
-  const filtered = useMemo(() => normalized.filter((recipe) => {
-    const bySearch = `${recipe.productoNombre} ${recipe.insumoNombre}`.toLowerCase().includes(search.toLowerCase());
-    const byProduct = productoFilter === 0 || recipe.productoId === productoFilter;
-    return bySearch && byProduct;
-  }), [normalized, search, productoFilter]);
+  const grouped = useMemo(() => {
+    const map = new Map<number, { productoNombre: string; detalles: typeof normalized }>();
+    normalized.forEach((item) => {
+      const current = map.get(item.productoId);
+      if (!current) {
+        map.set(item.productoId, { productoNombre: item.productoNombre, detalles: [item] });
+      } else {
+        current.detalles.push(item);
+      }
+    });
+    return Array.from(map.entries()).map(([key, value]) => ({
+      productoId: key,
+      productoNombre: value.productoNombre,
+      detalles: value.detalles,
+    }));
+  }, [normalized]);
 
-  const reset = () => {
-    setEditingId(null);
-    setForm(initialForm);
+  const filtered = useMemo(() => grouped.filter((recipeGroup) => {
+    const text = `${recipeGroup.productoNombre} ${recipeGroup.detalles.map((d) => d.insumoNombre).join(' ')}`.toLowerCase();
+    const bySearch = text.includes(search.toLowerCase());
+    const byProducto = productoFilter === 0 || recipeGroup.productoId === productoFilter;
+    return bySearch && byProducto;
+  }), [grouped, search, productoFilter]);
+
+  const resetForm = () => {
     setOpen(false);
+    setEditingProductoId(null);
+    setProductoId(0);
+    setDetalles([{ ...emptyDetalle }]);
   };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    const payload = {
-      productoId: form.productoId,
-      insumosId: [form.insumoId],
-      cantidades: [form.cantidad],
-      unidadesMedida: [form.unidadMedida],
+    const payload: RecetaRequest = {
+      productoId,
+      insumosId: detalles.map((item) => item.insumoId),
+      cantidades: detalles.map((item) => item.cantidad),
+      unidadesMedida: detalles.map((item) => item.unidadMedida.toUpperCase()),
     };
 
-    if (editingId) {
-      await updateReceta(form.productoId, payload as any);
+    if (editingProductoId) {
+      await updateReceta(editingProductoId, payload);
     } else {
-      await createReceta(payload as any);
+      await createReceta(payload);
     }
 
     await fetchRecetas();
-    reset();
+    resetForm();
   };
 
   return (
     <MainLayout>
       <AdminCrudLayout
         title="Recetas"
-        subtitle="Gestión de recetas (crear y actualizar) para productos preparados."
+        subtitle="Registra la receta de un producto como conjunto de múltiples insumos, cantidades y unidades."
         search={search}
         onSearch={setSearch}
         onCreate={() => setOpen(true)}
@@ -92,29 +112,33 @@ export const Recetas: React.FC = () => {
             <thead className="bg-slate-50 text-slate-600">
               <tr>
                 <th className="px-4 py-3 text-left">Producto</th>
-                <th className="px-4 py-3 text-left">Insumo</th>
-                <th className="px-4 py-3 text-left">Cantidad</th>
-                <th className="px-4 py-3 text-left">Unidad</th>
+                <th className="px-4 py-3 text-left">Detalle receta</th>
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((recipe) => (
-                <tr key={recipe.id} className="even:bg-slate-50/30">
-                  <td className="px-4 py-3 font-medium">{recipe.productoNombre}</td>
-                  <td className="px-4 py-3">{recipe.insumoNombre}</td>
-                  <td className="px-4 py-3">{recipe.cantidad}</td>
-                  <td className="px-4 py-3">{recipe.unidadMedida}</td>
+              {filtered.map((recipeGroup) => (
+                <tr key={recipeGroup.productoId} className="even:bg-slate-50/30">
+                  <td className="px-4 py-3 font-medium">{recipeGroup.productoNombre}</td>
+                  <td className="px-4 py-3">
+                    <ul className="space-y-1">
+                      {recipeGroup.detalles.map((detail) => (
+                        <li key={detail.id}>
+                          {detail.insumoNombre} — {detail.cantidad} {detail.unidadMedida}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
                   <td className="px-4 py-3 text-right">
                     <RowActions
                       onEdit={() => {
-                        setEditingId(recipe.id);
-                        setForm({
-                          productoId: recipe.productoId,
-                          insumoId: recipe.insumoId,
-                          cantidad: recipe.cantidad,
-                          unidadMedida: recipe.unidadMedida,
-                        });
+                        setEditingProductoId(recipeGroup.productoId);
+                        setProductoId(recipeGroup.productoId);
+                        setDetalles(recipeGroup.detalles.map((detail) => ({
+                          insumoId: detail.insumoId,
+                          cantidad: detail.cantidad,
+                          unidadMedida: detail.unidadMedida,
+                        })));
                         setOpen(true);
                       }}
                     />
@@ -127,25 +151,37 @@ export const Recetas: React.FC = () => {
       </AdminCrudLayout>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
-            <DialogTitle>{editingId ? 'Editar receta' : 'Nueva receta'}</DialogTitle>
-            <DialogDescription>Define el producto, insumo y cantidades para la receta.</DialogDescription>
+            <DialogTitle>{editingProductoId ? 'Actualizar receta' : 'Nueva receta'}</DialogTitle>
+            <DialogDescription>
+              Cada receta se registra enviando `productoId`, `insumosId[]`, `cantidades[]` y `unidadesMedida[]` con igual tamaño.
+            </DialogDescription>
           </DialogHeader>
-          <form onSubmit={submit} className="grid gap-3 md:grid-cols-2">
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.productoId} onChange={(e) => setForm({ ...form, productoId: Number(e.target.value) })}>
+
+          <form onSubmit={submit} className="space-y-3">
+            <select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" value={productoId} disabled={!!editingProductoId} onChange={(e) => setProductoId(Number(e.target.value))}>
               <option value={0}>Selecciona producto</option>
               {productos.map((product) => <option key={product.id} value={product.id}>{product.nombre}</option>)}
             </select>
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.insumoId} onChange={(e) => setForm({ ...form, insumoId: Number(e.target.value) })}>
-              <option value={0}>Selecciona insumo</option>
-              {insumos.map((supply) => <option key={supply.id} value={supply.id}>{supply.nombre}</option>)}
-            </select>
-            <Input type="number" step="0.01" placeholder="Cantidad" value={form.cantidad} onChange={(e) => setForm({ ...form, cantidad: Number(e.target.value) })} />
-            <Input placeholder="Unidad de medida" value={form.unidadMedida} onChange={(e) => setForm({ ...form, unidadMedida: e.target.value.toUpperCase() })} />
-            <DialogFooter className="md:col-span-2">
-              <Button type="button" variant="outline" onClick={reset}>Cancelar</Button>
-              <Button type="submit" className="bg-amber-600 hover:bg-amber-700">Guardar</Button>
+
+            {detalles.map((detalle, index) => (
+              <div key={index} className="grid gap-2 md:grid-cols-4">
+                <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={detalle.insumoId} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, insumoId: Number(e.target.value) } : item))}>
+                  <option value={0}>Insumo</option>
+                  {insumos.map((supply) => <option key={supply.id} value={supply.id}>{supply.nombre}</option>)}
+                </select>
+                <Input type="number" step="0.01" placeholder="Cantidad" value={detalle.cantidad} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, cantidad: Number(e.target.value) } : item))} />
+                <Input placeholder="Unidad" value={detalle.unidadMedida} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, unidadMedida: e.target.value.toUpperCase() } : item))} />
+                <Button type="button" variant="outline" disabled={detalles.length === 1} onClick={() => setDetalles((previous) => previous.filter((_, i) => i !== index))}>Quitar</Button>
+              </div>
+            ))}
+
+            <Button type="button" variant="secondary" onClick={() => setDetalles((previous) => [...previous, { ...emptyDetalle }])}>Agregar insumo</Button>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={resetForm}>Cancelar</Button>
+              <Button type="submit" className="bg-amber-600 hover:bg-amber-700">Guardar receta</Button>
             </DialogFooter>
           </form>
         </DialogContent>

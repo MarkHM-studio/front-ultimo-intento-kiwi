@@ -155,41 +155,6 @@ export const Login: React.FC = () => {
             </p>
           </CardFooter>
         </Card>
-
-        {/* Links de acceso rápido para demo */}
-        <div className="mt-8 text-center">
-          <p className="text-xs text-gray-500 mb-2">Acceso rápido (Demo)</p>
-          <div className="flex flex-wrap justify-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setFormData({ correo: 'joseluna@gmail.com', password: '123456' })}
-            >
-              Admin
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setFormData({ correo: 'raulgonzales@gmail.com', password: '123456' })}
-            >
-              Mozo
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setFormData({ correo: 'marcoperez@gmail.com', password: '123456' })}
-            >
-              Cocinero
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setFormData({ correo: 'laurarodriguez5@gmail.com', password: '123456' })}
-            >
-              Cajero
-            </Button>
-          </div>
-        </div>
       </div>
     </div>
   );

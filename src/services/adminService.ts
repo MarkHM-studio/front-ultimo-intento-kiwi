@@ -226,12 +226,12 @@ export const adminService = {
     return response.data;
   },
 
-  createReceta: async (data: RecetaRequest): Promise<RecetaResponse> => {
-    const response = await api.post<RecetaResponse>('/receta', data);
+  createReceta: async (data: RecetaRequest): Promise<RecetaResponse[]> => {
+    const response = await api.post<RecetaResponse[]>('/receta', data);
     return response.data;
   },
 
-  updateReceta: async (productoId: number, data: RecetaRequest[]): Promise<RecetaResponse[]> => {
+  updateReceta: async (productoId: number, data: RecetaRequest): Promise<RecetaResponse[]> => {
     const response = await api.put<RecetaResponse[]>(`/receta/producto/${productoId}`, data);
     return response.data;
   },

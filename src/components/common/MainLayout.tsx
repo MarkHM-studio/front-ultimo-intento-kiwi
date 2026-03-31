@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '@/stores';
+import { useAdminStore, useAuthStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import {
@@ -35,6 +35,7 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import type { RolNombre } from '@/types';
+import { toast } from 'sonner';
 
 interface NavItem {
   label: string;
@@ -77,9 +78,16 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { user, logout } = useAuthStore();
+  const { error, clearError } = useAdminStore();
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!error) return;
+    toast.error(error);
+    clearError();
+  }, [error, clearError]);
 
   const handleLogout = () => {
     logout();

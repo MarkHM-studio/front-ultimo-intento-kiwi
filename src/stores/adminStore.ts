@@ -123,8 +123,8 @@ interface AdminState {
   // Acciones - Recetas
   fetchRecetas: () => Promise<void>;
   fetchRecetasByProducto: (productoId: number) => Promise<void>;
-  createReceta: (data: RecetaRequest) => Promise<RecetaResponse>;
-  updateReceta: (productoId: number, data: RecetaRequest[]) => Promise<RecetaResponse[]>;
+  createReceta: (data: RecetaRequest) => Promise<RecetaResponse[]>;
+  updateReceta: (productoId: number, data: RecetaRequest) => Promise<RecetaResponse[]>;
 
   // Acciones - Dashboard
   fetchDashboardStats: () => Promise<void>;
@@ -699,9 +699,9 @@ export const useAdminStore = create<AdminState>((set) => ({
   createReceta: async (data) => {
     set({ isLoading: true, error: null });
     try {
-      const receta = await adminService.createReceta(data);
-      set(state => ({ recetas: [...state.recetas, receta], isLoading: false }));
-      return receta;
+      const recetas = await adminService.createReceta(data);
+      set(state => ({ recetas: [...state.recetas, ...recetas], isLoading: false }));
+      return recetas;
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Error al crear receta', isLoading: false });
       throw error;
@@ -712,7 +712,11 @@ export const useAdminStore = create<AdminState>((set) => ({
     set({ isLoading: true, error: null });
     try {
       const recetas = await adminService.updateReceta(productoId, data);
-      set({ recetasPorProducto: recetas, isLoading: false });
+      set(state => ({
+        recetasPorProducto: recetas,
+        recetas: [...state.recetas.filter(r => r.productoId !== productoId), ...recetas],
+        isLoading: false
+      }));
       return recetas;
     } catch (error: any) {
       set({ error: error.response?.data?.message || 'Error al actualizar receta', isLoading: false });

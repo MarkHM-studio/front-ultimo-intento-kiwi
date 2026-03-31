@@ -678,20 +678,20 @@ export interface MesaResponse {
 }
 
 export interface RecetaRequest {
-  cantidad: number;
-  unidadMedida: string;
   productoId: number;
-  insumoId: number;
+  insumosId: number[];
+  cantidades: number[];
+  unidadesMedida: string[];
 }
 
 export interface RecetaResponse {
   id: number;
+  productoId: number;
+  productoNombre: string;
+  insumoId: number;
+  insumoNombre: string;
   cantidad: number;
   unidadMedida: string;
-  fechaInscripcion: string;
-  fechaModificacion: string;
-  producto: Producto;
-  insumo: Insumo;
 }
 
 // ============================================
