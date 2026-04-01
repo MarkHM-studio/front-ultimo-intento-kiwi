@@ -7,8 +7,11 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
 import { RowActions } from '@/pages/admin/components/RowActions';
 import type { ProductoRequest } from '@/types';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from '@/pages/admin/components/TablePagination';
 
 const initialForm: ProductoRequest = { nombre: '', precio: 0, stock: 0, categoriaId: 0, marcaId: undefined };
+const PREPARED_CATEGORY_IDS = [1, 2];
 
 export const Productos: React.FC = () => {
   const { productos, categorias, marcas, fetchProductos, fetchCategorias, fetchMarcas, createProducto, updateProducto } = useAdminStore();
@@ -17,6 +20,7 @@ export const Productos: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<ProductoRequest>(initialForm);
+  const isStockLocked = form.categoriaId === 0 || PREPARED_CATEGORY_IDS.includes(form.categoriaId);
 
   useEffect(() => { fetchProductos(); fetchCategorias(); fetchMarcas(); }, [fetchProductos, fetchCategorias, fetchMarcas]);
 
@@ -25,6 +29,7 @@ export const Productos: React.FC = () => {
     const byCategory = categoriaFilter === 0 || product.categoria?.id === categoriaFilter;
     return bySearch && byCategory;
   }), [productos, search, categoriaFilter]);
+  const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   const reset = () => {
     setEditingId(null);
@@ -34,8 +39,11 @@ export const Productos: React.FC = () => {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (editingId) await updateProducto(editingId, form);
-    else await createProducto(form);
+    const payload: ProductoRequest = PREPARED_CATEGORY_IDS.includes(form.categoriaId)
+      ? { ...form, stock: 0, marcaId: undefined }
+      : form;
+    if (editingId) await updateProducto(editingId, payload);
+    else await createProducto(payload);
     await fetchProductos();
     reset();
   };
@@ -67,7 +75,7 @@ export const Productos: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((product) => (
+              {paginatedData.map((product) => (
                 <tr key={product.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{product.nombre}<div className="text-xs text-slate-500">Marca: {product.marca?.nombre || 'Sin marca'}</div></td>
                   <td className="px-4 py-3">{product.categoria?.nombre || '-'}</td>
@@ -77,7 +85,14 @@ export const Productos: React.FC = () => {
                     <RowActions
                       onEdit={() => {
                         setEditingId(product.id);
-                        setForm({ nombre: product.nombre, precio: Number(product.precio), stock: product.stock, categoriaId: product.categoria?.id || 0, marcaId: product.marca?.id });
+                        const categoriaId = product.categoria?.id || 0;
+                        setForm({
+                          nombre: product.nombre,
+                          precio: Number(product.precio),
+                          stock: PREPARED_CATEGORY_IDS.includes(categoriaId) ? 0 : product.stock,
+                          categoriaId,
+                          marcaId: PREPARED_CATEGORY_IDS.includes(categoriaId) ? undefined : product.marca?.id,
+                        });
                         setOpen(true);
                       }}
                     />
@@ -86,6 +101,14 @@ export const Productos: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </AdminCrudLayout>
 
@@ -98,12 +121,36 @@ export const Productos: React.FC = () => {
           <form onSubmit={submit} className="grid gap-3 md:grid-cols-2">
             <Input placeholder="Nombre" value={form.nombre} onChange={(e) => setForm({ ...form, nombre: e.target.value })} />
             <Input type="number" step="0.01" placeholder="Precio" value={form.precio} onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })} />
-            <Input type="number" placeholder="Stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.categoriaId} onChange={(e) => setForm({ ...form, categoriaId: Number(e.target.value) })}>
+            <Input
+              type="number"
+              placeholder="Stock"
+              value={form.stock}
+              disabled={isStockLocked}
+              onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
+            />
+            <select
+              className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+              value={form.categoriaId}
+              onChange={(e) => {
+                const categoriaId = Number(e.target.value);
+                const lockedByCategory = PREPARED_CATEGORY_IDS.includes(categoriaId);
+                setForm((previous) => ({
+                  ...previous,
+                  categoriaId,
+                  stock: lockedByCategory ? 0 : previous.stock,
+                  marcaId: lockedByCategory ? undefined : previous.marcaId,
+                }));
+              }}
+            >
               <option value={0}>Selecciona una categoría</option>
               {categorias.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}
             </select>
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.marcaId || 0} onChange={(e) => setForm({ ...form, marcaId: Number(e.target.value) || undefined })}>
+            <select
+              className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+              value={form.marcaId || 0}
+              disabled={PREPARED_CATEGORY_IDS.includes(form.categoriaId)}
+              onChange={(e) => setForm({ ...form, marcaId: Number(e.target.value) || undefined })}
+            >
               <option value={0}>Sin marca</option>
               {marcas.map((brand) => <option key={brand.id} value={brand.id}>{brand.nombre}</option>)}
             </select>

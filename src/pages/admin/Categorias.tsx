@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AdminCrudLayout } from './components/AdminCrudLayout';
 import { RowActions } from './components/RowActions';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from './components/TablePagination';
 
 export const Categorias: React.FC = () => {
   const { categorias, fetchCategorias, createCategoria, updateCategoria } = useAdminStore();
@@ -20,6 +22,15 @@ export const Categorias: React.FC = () => {
   const filtered = useMemo(() => categorias.filter((category) =>
     category.nombre.toLowerCase().includes(search.toLowerCase()),
   ), [categorias, search]);
+  const {
+    paginatedData,
+    currentPage,
+    totalPages,
+    totalItems,
+    pageSize,
+    setCurrentPage,
+    setPageSize,
+  } = useTablePagination(filtered);
 
   const reset = () => {
     setEditingId(null);
@@ -50,14 +61,16 @@ export const Categorias: React.FC = () => {
             <thead className="bg-slate-50 text-slate-600">
               <tr>
                 <th className="px-4 py-3 text-left">Categoría</th>
-                <th className="px-4 py-3 text-left">Última actualización</th>
+                <th className="px-4 py-3 text-left">Fecha creación</th>
+                <th className="px-4 py-3 text-left">Fecha actualización</th>
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((category) => (
+              {paginatedData.map((category) => (
                 <tr key={category.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{category.nombre}</td>
+                  <td className="px-4 py-3">{formatDate(category.fechaHoraRegistro)}</td>
                   <td className="px-4 py-3">{formatDate(category.fechaHoraActualizacion || category.fechaHoraRegistro)}</td>
                   <td className="px-4 py-3 text-right">
                     <RowActions onEdit={() => { setEditingId(category.id); setNombre(category.nombre); setOpen(true); }} />
@@ -66,6 +79,14 @@ export const Categorias: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </AdminCrudLayout>
 

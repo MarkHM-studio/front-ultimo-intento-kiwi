@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AdminCrudLayout } from './components/AdminCrudLayout';
 import { RowActions } from './components/RowActions';
 import type { TrabajadorRequest } from '@/types';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from './components/TablePagination';
 
 const initialForm: TrabajadorRequest = {
   nombre: '', apellido: '', dni: '', telefono: '', correo: '', fechaInicio: '', fechaFin: '', estado: 'ACTIVO', usuarioId: 1, tipoJornadaId: 1, turnoId: 3,
@@ -70,6 +72,7 @@ export const Trabajadores: React.FC = () => {
     `${worker.nombre} ${worker.apellido} ${worker.dni} ${worker.correo}`.toLowerCase().includes(search.toLowerCase()) &&
     (normalizeStatus(worker.estado || 'ACTIVO') === statusFilter),
   ), [trabajadores, search, statusFilter]);
+  const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   const reset = () => {
     setEditingId(null);
@@ -118,7 +121,7 @@ export const Trabajadores: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((worker: any) => (
+              {paginatedData.map((worker: any) => (
                 <tr key={worker.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{worker.nombre} {worker.apellido}<div className="text-xs text-slate-500">{worker.correo}</div></td>
                   <td className="px-4 py-3">DNI {worker.dni}<div className="text-xs text-slate-500">{worker.telefono}</div></td>
@@ -159,6 +162,14 @@ export const Trabajadores: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </AdminCrudLayout>
 

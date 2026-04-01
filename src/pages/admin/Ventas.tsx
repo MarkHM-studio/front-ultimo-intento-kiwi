@@ -4,6 +4,8 @@ import { useComprobanteStore } from '@/stores';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from './components/TablePagination';
 
 export const Ventas: React.FC = () => {
   const { comprobantes, comprobanteActual, fetchComprobantes, fetchComprobanteById } = useComprobanteStore();
@@ -22,6 +24,7 @@ export const Ventas: React.FC = () => {
     const byStatus = status === 'TODOS' || voucher.estado === status;
     return bySearch && byStatus;
   }), [comprobantes, search, status]);
+  const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   return (
     <MainLayout>
@@ -48,17 +51,19 @@ export const Ventas: React.FC = () => {
             <thead className="bg-slate-50 text-slate-600">
               <tr>
                 <th className="px-4 py-3 text-left">Comprobante</th>
-                <th className="px-4 py-3 text-left">Fecha venta</th>
+                <th className="px-4 py-3 text-left">Fecha Apertura</th>
+                <th className="px-4 py-3 text-left">Fecha Venta</th>
                 <th className="px-4 py-3 text-left">Total</th>
                 <th className="px-4 py-3 text-left">Estado</th>
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((voucher) => (
+              {paginatedData.map((voucher: any) => (
                 <tr key={voucher.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">Comprobante #{voucher.id}</td>
-                  <td className="px-4 py-3">{formatDate(voucher.fechaHoraVenta)}</td>
+                  <td className="px-4 py-3">{formatDate(voucher.fechaHoraApertura || voucher.fechaHora_apertura || voucher.fechaHoraRegistro || voucher.fechaHora_registro)}</td>
+                  <td className="px-4 py-3">{formatDate(voucher.fechaHoraVenta || voucher.fechaHora_venta || voucher.fechaHoraActualizacion || voucher.fechaHora_actualizacion)}</td>
                   <td className="px-4 py-3">S/ {Number(voucher.total).toFixed(2)}</td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${estadoClass(voucher.estado)}`}>{voucher.estado}</span>
@@ -70,6 +75,14 @@ export const Ventas: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </Card>
 
         <Card className="rounded-2xl p-5">
@@ -82,7 +95,8 @@ export const Ventas: React.FC = () => {
               <p><strong>Estado:</strong> {comprobanteActual.estado}</p>
               <p><strong>Total:</strong> S/ {Number(comprobanteActual.total).toFixed(2)}</p>
               <p><strong>IGV:</strong> S/ {Number(comprobanteActual.igv).toFixed(2)}</p>
-              <p className="md:col-span-2"><strong>Fecha de venta:</strong> {formatDate(comprobanteActual.fechaHoraVenta)}</p>
+              <p className="md:col-span-2"><strong>Fecha de apertura:</strong> {formatDate((comprobanteActual as any).fechaHoraApertura || (comprobanteActual as any).fechaHora_apertura)}</p>
+              <p className="md:col-span-2"><strong>Fecha de venta:</strong> {formatDate((comprobanteActual as any).fechaHoraVenta || (comprobanteActual as any).fechaHora_venta)}</p>
             </div>
           )}
         </Card>

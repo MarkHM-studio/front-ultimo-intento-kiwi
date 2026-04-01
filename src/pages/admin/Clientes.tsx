@@ -9,6 +9,8 @@ import { RowActions } from './components/RowActions';
 import type { ClienteRequest } from '@/types';
 import api from '@/services/api';
 import type { Distrito } from '@/types';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from './components/TablePagination';
 
 const initialForm: ClienteRequest = {
   nombre: '', apellido: '', fechaNacimiento: '', telefono: '', correo: '', distritoId: 1, usuarioId: 1,
@@ -41,6 +43,7 @@ export const Clientes: React.FC = () => {
     `${client.nombre} ${client.apellido} ${client.correo} ${client.telefono}`.toLowerCase().includes(search.toLowerCase()) &&
     (normalizeStatus(client.estado || 'ACTIVO') === statusFilter),
   ), [clientes, search, statusFilter]);
+  const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   const reset = () => {
     setForm(initialForm);
@@ -89,7 +92,7 @@ export const Clientes: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((client: any) => (
+              {paginatedData.map((client: any) => (
                 <tr key={client.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{client.nombre} {client.apellido}</td>
                   <td className="px-4 py-3">{client.correo}<div className="text-xs text-slate-500">{client.telefono}</div></td>
@@ -124,6 +127,14 @@ export const Clientes: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </AdminCrudLayout>
 

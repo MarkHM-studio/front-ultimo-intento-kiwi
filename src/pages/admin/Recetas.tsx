@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AdminCrudLayout } from './components/AdminCrudLayout';
 import { RowActions } from './components/RowActions';
 import type { RecetaRequest } from '@/types';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from './components/TablePagination';
 
 interface RecetaDetalle {
   insumoId: number;
@@ -14,7 +16,7 @@ interface RecetaDetalle {
   unidadMedida: string;
 }
 
-const emptyDetalle: RecetaDetalle = { insumoId: 0, cantidad: 0, unidadMedida: '' };
+const emptyDetalle: RecetaDetalle = { insumoId: 0, cantidad: 0, unidadMedida: 'G' };
 
 export const Recetas: React.FC = () => {
   const { recetas, productos, insumos, fetchRecetas, fetchProductos, fetchInsumos, createReceta, updateReceta } = useAdminStore();
@@ -24,7 +26,6 @@ export const Recetas: React.FC = () => {
   const [editingProductoId, setEditingProductoId] = useState<number | null>(null);
   const [productoId, setProductoId] = useState(0);
   const [detalles, setDetalles] = useState<RecetaDetalle[]>([{ ...emptyDetalle }]);
-  const getUnidadByInsumo = (insumoId: number) => insumos.find((item) => item.id === insumoId)?.unidadMedida?.toUpperCase() || '';
 
   useEffect(() => {
     fetchRecetas();
@@ -65,6 +66,7 @@ export const Recetas: React.FC = () => {
     const byProducto = productoFilter === 0 || recipeGroup.productoId === productoFilter;
     return bySearch && byProducto;
   }), [grouped, search, productoFilter]);
+   const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   const resetForm = () => {
     setOpen(false);
@@ -80,7 +82,7 @@ export const Recetas: React.FC = () => {
       productoId,
       insumosId: detalles.map((item) => item.insumoId),
       cantidades: detalles.map((item) => item.cantidad),
-      unidadesMedida: detalles.map((item) => getUnidadByInsumo(item.insumoId) || item.unidadMedida.toUpperCase()),
+      unidadesMedida: detalles.map((item) => item.unidadMedida.toUpperCase()),
     };
 
     if (editingProductoId) {
@@ -117,8 +119,8 @@ export const Recetas: React.FC = () => {
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody>
-              {filtered.map((recipeGroup) => (
+             <tbody>
+              {paginatedData.map((recipeGroup) => (
                 <tr key={recipeGroup.productoId} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{recipeGroup.productoNombre}</td>
                   <td className="px-4 py-3">
@@ -146,8 +148,16 @@ export const Recetas: React.FC = () => {
                   </td>
                 </tr>
               ))}
-            </tbody>
+            </tbody>  
           </table>
+             <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </AdminCrudLayout>
 
@@ -168,21 +178,12 @@ export const Recetas: React.FC = () => {
 
             {detalles.map((detalle, index) => (
               <div key={index} className="grid gap-2 md:grid-cols-4">
-                <select
-                  className="h-10 rounded-md border border-slate-200 px-3 text-sm"
-                  value={detalle.insumoId}
-                  onChange={(e) => {
-                    const insumoId = Number(e.target.value);
-                    setDetalles((previous) => previous.map((item, i) =>
-                      i === index ? { ...item, insumoId, unidadMedida: getUnidadByInsumo(insumoId) } : item,
-                    ));
-                  }}
-                >
+                <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={detalle.insumoId} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, insumoId: Number(e.target.value) } : item))}>
                   <option value={0}>Insumo</option>
                   {insumos.map((supply) => <option key={supply.id} value={supply.id}>{supply.nombre}</option>)}
                 </select>
                 <Input type="number" step="0.01" placeholder="Cantidad" value={detalle.cantidad} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, cantidad: Number(e.target.value) } : item))} />
-                <Input placeholder="Unidad" disabled value={getUnidadByInsumo(detalle.insumoId) || detalle.unidadMedida || '-'} />
+                <Input placeholder="Unidad" value={detalle.unidadMedida} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, unidadMedida: e.target.value.toUpperCase() } : item))} />
                 <Button type="button" variant="outline" disabled={detalles.length === 1} onClick={() => setDetalles((previous) => previous.filter((_, i) => i !== index))}>Quitar</Button>
               </div>
             ))}

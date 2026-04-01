@@ -9,16 +9,22 @@ import type {
 } from '@/types';
 
 export const comprobanteService = {
+  normalizeComprobanteFields: (item: ComprobanteResponse): ComprobanteResponse => ({
+    ...item,
+    fechaHoraApertura: (item as any).fechaHoraApertura ?? (item as any).fechaHoraApertura_ ?? (item as any).fechaHora_registro ?? (item as any).fechaHoraRegistro,
+    fechaHoraVenta: (item as any).fechaHoraVenta ?? (item as any).fechaHora_venta ?? (item as any).fechaHora_actualizacion ?? (item as any).fechaHoraActualizacion,
+  }),
+
   // Get all comprobantes
   getAll: async (): Promise<ComprobanteResponse[]> => {
     const response = await api.get<ComprobanteResponse[]>('/comprobante');
-    return response.data;
+    return response.data.map((item) => comprobanteService.normalizeComprobanteFields(item));
   },
 
   // Get comprobante by id
   getById: async (id: number): Promise<ComprobanteResponse> => {
     const response = await api.get<ComprobanteResponse>(`/comprobante/${id}`);
-    return response.data;
+    return comprobanteService.normalizeComprobanteFields(response.data);
   },
 
   // Create comprobante

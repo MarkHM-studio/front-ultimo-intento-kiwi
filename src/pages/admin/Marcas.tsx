@@ -6,6 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AdminCrudLayout } from './components/AdminCrudLayout';
 import { RowActions } from './components/RowActions';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from './components/TablePagination';
 
 export const Marcas: React.FC = () => {
   const { marcas, fetchMarcas, createMarca, updateMarca } = useAdminStore();
@@ -20,6 +22,7 @@ export const Marcas: React.FC = () => {
   const filtered = useMemo(() => marcas.filter((brand) =>
     brand.nombre.toLowerCase().includes(search.toLowerCase()),
   ), [marcas, search]);
+  const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   const reset = () => { setEditingId(null); setNombre(''); setOpen(false); };
 
@@ -46,14 +49,16 @@ export const Marcas: React.FC = () => {
             <thead className="bg-slate-50 text-slate-600">
               <tr>
                 <th className="px-4 py-3 text-left">Marca</th>
-                <th className="px-4 py-3 text-left">Registro</th>
+                <th className="px-4 py-3 text-left">Fecha creación</th>
+                <th className="px-4 py-3 text-left">Fecha actualización</th>
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((brand) => (
+              {paginatedData.map((brand) => (
                 <tr key={brand.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{brand.nombre}</td>
+                  <td className="px-4 py-3">{formatDate(brand.fechaHoraRegistro)}</td>
                   <td className="px-4 py-3">{formatDate(brand.fechaHoraActualizacion || brand.fechaHoraRegistro)}</td>
                   <td className="px-4 py-3 text-right">
                     <RowActions onEdit={() => { setEditingId(brand.id); setNombre(brand.nombre); setOpen(true); }} />
@@ -62,6 +67,14 @@ export const Marcas: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </AdminCrudLayout>
 

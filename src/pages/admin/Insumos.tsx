@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
 import { RowActions } from '@/pages/admin/components/RowActions';
 import type { InsumoRequest } from '@/types';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from '@/pages/admin/components/TablePagination';
 
 const initialForm: InsumoRequest = { nombre: '', precio: 0, stock: 0, unidadMedida: 'KG', marcaId: undefined };
 
@@ -25,6 +27,7 @@ export const Insumos: React.FC = () => {
     const byUnit = unitFilter === 'TODOS' || supply.unidadMedida === unitFilter;
     return bySearch && byUnit;
   }), [insumos, search, unitFilter]);
+  const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   const reset = () => {
     setEditingId(null);
@@ -69,7 +72,7 @@ export const Insumos: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((supply) => (
+              {paginatedData.map((supply) => (
                 <tr key={supply.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{supply.nombre}<div className="text-xs text-slate-500">Marca: {supply.marca?.nombre || 'Sin marca'}</div></td>
                   <td className="px-4 py-3">{supply.unidadMedida}</td>
@@ -86,6 +89,14 @@ export const Insumos: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </AdminCrudLayout>
 

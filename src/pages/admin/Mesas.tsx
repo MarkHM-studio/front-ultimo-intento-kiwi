@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
 import { RowActions } from '@/pages/admin/components/RowActions';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from '@/pages/admin/components/TablePagination';
 import type { MesaRequest } from '@/types';
 
 const initialForm: MesaRequest = { nombre: '' };
@@ -19,6 +21,7 @@ export const Mesas: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<MesaRequest>(initialForm);
+  const formatDate = (value?: string) => value ? new Date(value).toLocaleString('es-PE') : '-';
 
   useEffect(() => {
     fetchMesas();
@@ -30,6 +33,7 @@ export const Mesas: React.FC = () => {
     const byStatus = statusFilter === 'TODOS' || table.estado === statusFilter;
     return bySearch && byStatus;
   }), [mesas, search, statusFilter]);
+  const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   const reset = () => {
     setEditingId(null);
@@ -68,14 +72,18 @@ export const Mesas: React.FC = () => {
                 <tr>
                   <th className="px-4 py-3 text-left">Mesa</th>
                   <th className="px-4 py-3 text-left">Estado</th>
+                  <th className="px-4 py-3 text-left">Fecha creación</th>
+                  <th className="px-4 py-3 text-left">Fecha actualización</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((table) => (
+                {paginatedData.map((table) => (
                   <tr key={table.id} className="even:bg-slate-50/30">
                     <td className="px-4 py-3 font-medium">{table.nombre}</td>
                     <td className="px-4 py-3">{table.estado}</td>
+                    <td className="px-4 py-3">{formatDate(table.fechaHoraRegistro)}</td>
+                    <td className="px-4 py-3">{formatDate(table.fechaHoraActualizacion || table.fechaHoraRegistro)}</td>
                     <td className="px-4 py-3 text-right">
                       <RowActions
                         onEdit={() => {
@@ -93,6 +101,14 @@ export const Mesas: React.FC = () => {
                 ))}
               </tbody>
             </table>
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={totalItems}
+              pageSize={pageSize}
+              onPageChange={setCurrentPage}
+              onPageSizeChange={setPageSize}
+            />
           </section>
         </AdminCrudLayout>
 

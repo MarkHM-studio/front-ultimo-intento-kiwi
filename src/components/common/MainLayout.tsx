@@ -15,6 +15,8 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
   Menu,
+  ChevronLeft,
+  ChevronRight,
   Home,
   Users,
   Package,
@@ -82,6 +84,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     if (!error) return;
@@ -107,16 +110,22 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col">
-      <div className="p-6">
+      <div className="flex items-center justify-between border-b border-gray-700 p-4">
         <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-600">
-            <span className="text-sm font-bold text-white">LP</span>
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8B4513]">
+            <span className="text-sm font-bold text-white">🍸</span>
           </div>
-          <span className="text-xl font-bold text-gray-900">La Pituca</span>
+          {!collapsed && <span className="text-lg font-bold text-white">La Pituca</span>}
         </Link>
+        <button
+          onClick={() => setCollapsed((prev) => !prev)}
+          className="hidden rounded-lg p-1 text-gray-200 transition hover:bg-gray-700 lg:block"
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
       </div>
 
-      <nav className="flex-1 space-y-1 px-4">
+      <nav className="flex-1 space-y-1 px-2 py-4">
         {filteredNavItems.map((item) => {
           const isActive = location.pathname === item.href;
           return (
@@ -124,27 +133,27 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               key={item.href}
               to={item.href}
               onClick={() => setIsOpen(false)}
-              className={`flex items-center gap-3 rounded-lg px-4 py-3 transition-colors ${
-                isActive ? 'bg-amber-100 text-amber-900' : 'text-gray-600 hover:bg-gray-100'
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-colors ${
+                isActive ? 'bg-[#8B4513] text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
               }`}
             >
               {item.icon}
-              <span className="font-medium">{item.label}</span>
+              {!collapsed && <span className="font-medium">{item.label}</span>}
             </Link>
           );
         })}
       </nav>
 
-      <div className="border-t p-4">
-        <div className="flex items-center gap-3 px-4 py-3">
+      <div className="border-t border-gray-700 p-4">
+        <div className="flex items-center gap-3 px-2 py-2">
           <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-amber-600 text-white">
+            <AvatarFallback className="bg-[#8B4513] text-white">
               {user?.nombreCompleto ? getInitials(user.nombreCompleto) : 'U'}
             </AvatarFallback>
           </Avatar>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-gray-900">{user?.nombreCompleto || user?.correo}</p>
-            <p className="truncate text-xs text-gray-500">{user?.rol}</p>
+          <div className={`min-w-0 flex-1 ${collapsed ? 'hidden' : 'block'}`}>
+            <p className="truncate text-sm font-medium text-white">{user?.nombreCompleto || user?.correo}</p>
+            <p className="truncate text-xs text-gray-400">{user?.rol}</p>
           </div>
         </div>
       </div>
@@ -152,7 +161,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#FDF8F3]">
       <div className="sticky top-0 z-40 flex items-center justify-between border-b bg-white px-4 py-3 lg:hidden">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
@@ -160,14 +169,14 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <Menu className="h-6 w-6" />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
+          <SheetContent side="left" className="w-64 bg-[#1F2937] p-0">
             <SidebarContent />
           </SheetContent>
         </Sheet>
 
-        <Link to="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-600">
-            <span className="text-sm font-bold text-white">LP</span>
+        <Link to="/" className="flex items-center gap-2 text-[#1F2937]">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8B4513]">
+            <span className="text-sm font-bold text-white">🍸</span>
           </div>
           <span className="text-lg font-bold">La Pituca</span>
         </Link>
@@ -176,7 +185,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon">
               <Avatar className="h-8 w-8">
-                <AvatarFallback className="bg-amber-600 text-xs text-white">
+                <AvatarFallback className="bg-[#8B4513] text-xs text-white">
                   {user?.nombreCompleto ? getInitials(user.nombreCompleto) : 'U'}
                 </AvatarFallback>
               </Avatar>
@@ -194,13 +203,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       </div>
 
       <div className="flex">
-        <aside className="sticky top-0 hidden h-screen w-64 border-r bg-white lg:block">
+        <aside className={`sticky top-0 hidden h-screen border-r border-gray-700 bg-[#1F2937] transition-all lg:block ${collapsed ? 'w-20' : 'w-64'}`}>
           <SidebarContent />
         </aside>
 
         <main className="min-h-screen flex-1">
           <header className="sticky top-0 z-30 hidden items-center justify-between border-b bg-white px-8 py-4 lg:flex">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-[#1F2937]">
               {filteredNavItems.find((item) => item.href === location.pathname)?.label || 'Dashboard'}
             </h1>
             <div className="flex items-center gap-4">
@@ -211,7 +220,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarFallback className="bg-amber-600 text-xs text-white">
+                      <AvatarFallback className="bg-[#8B4513] text-xs text-white">
                         {user?.nombreCompleto ? getInitials(user.nombreCompleto) : 'U'}
                       </AvatarFallback>
                     </Avatar>

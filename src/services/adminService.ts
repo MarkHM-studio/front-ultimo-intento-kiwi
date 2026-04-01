@@ -16,6 +16,13 @@ import type {
 } from '@/types';
 
 export const adminService = {
+  // Compatibilidad de auditoría cuando el backend envía campos con guiones bajos.
+  normalizeAuditFields: <T extends Record<string, any>>(item: T): T => ({
+    ...item,
+    fechaHoraRegistro: item.fechaHoraRegistro ?? item.fechaHora_Registro ?? item.fechaHora_registro,
+    fechaHoraActualizacion: item.fechaHoraActualizacion ?? item.fechaHora_Actualizacion ?? item.fechaHora_actualizacion,
+  }),
+
   // ============ PRODUCTOS ============
   getProductos: async (): Promise<ProductoResponse[]> => {
     const response = await api.get<ProductoResponse[]>('/producto');
@@ -63,10 +70,10 @@ export const adminService = {
     return response.data;
   },
 
-  // ============ CATEGORIAS ============
+   // ============ CATEGORIAS ============
   getCategorias: async (): Promise<CategoriaResponse[]> => {
     const response = await api.get<CategoriaResponse[]>('/categoria');
-    return response.data;
+    return response.data.map((item) => adminService.normalizeAuditFields(item));
   },
 
   createCategoria: async (data: CategoriaRequest): Promise<CategoriaResponse> => {
@@ -86,7 +93,7 @@ export const adminService = {
   // ============ MARCAS ============
   getMarcas: async (): Promise<MarcaResponse[]> => {
     const response = await api.get<MarcaResponse[]>('/marca');
-    return response.data;
+    return response.data.map((item) => adminService.normalizeAuditFields(item));
   },
 
   createMarca: async (data: MarcaRequest): Promise<MarcaResponse> => {
@@ -198,7 +205,7 @@ export const adminService = {
   // ============ MESAS ============
   getMesas: async (): Promise<MesaResponse[]> => {
     const response = await api.get<MesaResponse[]>('/mesa');
-    return response.data;
+    return response.data.map((item) => adminService.normalizeAuditFields(item));
   },
 
   createMesa: async (data: MesaRequest): Promise<MesaResponse> => {

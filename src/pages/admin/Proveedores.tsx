@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { AdminCrudLayout } from '@/pages/admin/components/AdminCrudLayout';
 import { RowActions } from '@/pages/admin/components/RowActions';
 import type { ProveedorRequest } from '@/types';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from '@/pages/admin/components/TablePagination';
 
 const initialForm: ProveedorRequest = { contacto: '', razonSocial: '', ruc: '', direccion: '', telefono: '', correo: '' };
 
@@ -25,6 +27,7 @@ export const Proveedores: React.FC = () => {
     const byStatus = statusFilter === 'TODOS' || provider.estado === statusFilter;
     return bySearch && byStatus;
   }), [proveedores, search, statusFilter]);
+  const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   const reset = () => { setEditingId(null); setForm(initialForm); setOpen(false); };
 
@@ -63,7 +66,7 @@ export const Proveedores: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((provider) => (
+              {paginatedData.map((provider) => (
                 <tr key={provider.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{provider.razonSocial}<div className="text-xs text-slate-500">{provider.correo}</div></td>
                   <td className="px-4 py-3">{provider.ruc}<div className="text-xs text-slate-500">{provider.contacto} - {provider.telefono}</div></td>
@@ -86,6 +89,14 @@ export const Proveedores: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </AdminCrudLayout>
 

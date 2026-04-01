@@ -15,6 +15,8 @@ import { AdminCrudLayout } from './components/AdminCrudLayout';
 import { RowActions } from './components/RowActions';
 import type { UsuarioRequest } from '@/types';
 import { Eye, EyeOff } from 'lucide-react';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { TablePagination } from './components/TablePagination';
 
 const ROLES = [
   { id: 1, nombre: 'CLIENTE' }, { id: 2, nombre: 'MOZO' }, { id: 3, nombre: 'COCINERO' }, { id: 4, nombre: 'BARTENDER' },
@@ -42,6 +44,7 @@ export const Usuarios: React.FC = () => {
     const byStatus = normalizeStatus(user.estado || 'ACTIVO') === statusFilter;
     return bySearch && byRole && byStatus;
   }), [usuarios, search, roleFilter, statusFilter]);
+    const { paginatedData, currentPage, totalPages, totalItems, pageSize, setCurrentPage, setPageSize } = useTablePagination(filtered);
 
   const reset = () => {
     setEditingId(null);
@@ -97,8 +100,8 @@ export const Usuarios: React.FC = () => {
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
-            <tbody>
-              {filtered.map((user: any) => (
+           <tbody>
+              {paginatedData.map((user: any) => (
                 <tr key={user.id} className="bg-white text-slate-700 even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{user.username}</td>
                   <td className="px-4 py-3">{user.rol?.nombre || user.rolNombre || '-'}</td>
@@ -131,6 +134,14 @@ export const Usuarios: React.FC = () => {
               ))}
             </tbody>
           </table>
+          <TablePagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            totalItems={totalItems}
+            pageSize={pageSize}
+            onPageChange={setCurrentPage}
+            onPageSizeChange={setPageSize}
+          />
         </section>
       </AdminCrudLayout>
 
