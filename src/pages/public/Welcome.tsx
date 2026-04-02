@@ -1,204 +1,308 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { 
-  Utensils, 
-  Calendar, 
-  Users, 
-  Clock, 
-  MapPin, 
-  Phone, 
-  ArrowRight,
+import {
   Wine,
-  ChefHat
+  UtensilsCrossed,
+  Clock,
+  MapPin,
+  Phone,
+  Calendar,
+  Users,
+  Star,
+  ChevronRight,
+  GlassWater,
+  ChefHat,
 } from 'lucide-react';
 
 export const Welcome: React.FC = () => {
-  return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <header className="bg-gradient-to-r from-amber-900 to-amber-700 text-white">
-        <div className="container mx-auto px-4 py-6">
-          <nav className="flex items-center justify-between mb-12">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
-                <span className="text-amber-800 font-bold text-lg">LP</span>
-              </div>
-              <span className="text-xl font-bold">La Pituca</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <Link to="/login">
-                <Button variant="ghost" className="text-white hover:text-amber-100">
-                  Iniciar Sesión
-                </Button>
-              </Link>
-              <Link to="/register">
-                <Button className="bg-white text-amber-800 hover:bg-amber-100">
-                  Registrarse
-                </Button>
-              </Link>
-            </div>
-          </nav>
+  const navigate = useNavigate();
 
-          <div className="grid lg:grid-cols-2 gap-12 items-center py-12">
-            <div>
-              <h1 className="text-4xl lg:text-6xl font-bold mb-6">
-                Bienvenido a <span className="text-amber-300">La Pituca</span>
-              </h1>
-              <p className="text-xl text-amber-100 mb-8">
-                El mejor restobar de Chosica. Disfruta de nuestra deliciosa comida, 
-                bebidas y un ambiente acogedor para toda la familia.
-              </p>
-              <div className="flex flex-wrap gap-4">
-                <Link to="/register">
-                  <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white">
-                    Hacer una Reserva
-                    <ArrowRight className="ml-2 h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link to="/login">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
-                    Acceso Trabajadores
-                  </Button>
-                </Link>
+  const features = [
+    {
+      icon: <UtensilsCrossed className="w-8 h-8" />,
+      title: 'Comida a la Carta',
+      description: 'Deliciosos platos peruanos preparados por chefs expertos',
+    },
+    {
+      icon: <Wine className="w-8 h-8" />,
+      title: 'Bebidas Premium',
+      description: 'Cervezas, cócteles y vinos seleccionados',
+    },
+    {
+      icon: <Calendar className="w-8 h-8" />,
+      title: 'Reservas Online',
+      description: 'Reserva tu mesa de forma rápida y sencilla',
+    },
+    {
+      icon: <Users className="w-8 h-8" />,
+      title: 'Ambiente Familiar',
+      description: 'Un lugar acogedor para disfrutar en familia',
+    },
+  ];
+
+  const testimonials = [
+    {
+      name: 'María González',
+      comment: 'La comida es deliciosa y el ambiente muy acogedor. Mi familia y yo venimos siempre.',
+      rating: 5,
+    },
+    {
+      name: 'Carlos Mendoza',
+      comment: 'Excelente atención y los cócteles son los mejores de Chosica.',
+      rating: 5,
+    },
+    {
+      name: 'Ana Torres',
+      comment: 'El sistema de reservas es muy práctico. Siempre encuentro mesa disponible.',
+      rating: 5,
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#FDF8F3]">
+      <header className="bg-white shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-2">
+              <div className="bg-[#8B4513] p-2 rounded-lg">
+                <GlassWater className="w-6 h-6 text-white" />
               </div>
+              <span className="text-xl font-bold text-[#8B4513]">La Pituca</span>
             </div>
-            <div className="hidden lg:block">
-              <div className="bg-amber-800/50 rounded-3xl p-8 backdrop-blur-sm">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/10 rounded-2xl p-6 text-center">
-                    <Utensils className="h-10 w-10 mx-auto mb-3 text-amber-300" />
-                    <p className="font-semibold">Comida de Calidad</p>
-                  </div>
-                  <div className="bg-white/10 rounded-2xl p-6 text-center">
-                    <Wine className="h-10 w-10 mx-auto mb-3 text-amber-300" />
-                    <p className="font-semibold">Bebidas Premium</p>
-                  </div>
-                  <div className="bg-white/10 rounded-2xl p-6 text-center">
-                    <Calendar className="h-10 w-10 mx-auto mb-3 text-amber-300" />
-                    <p className="font-semibold">Reservas Online</p>
-                  </div>
-                  <div className="bg-white/10 rounded-2xl p-6 text-center">
-                    <Users className="h-10 w-10 mx-auto mb-3 text-amber-300" />
-                    <p className="font-semibold">Ambiente Familiar</p>
-                  </div>
-                </div>
-              </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => navigate('/login')}
+                className="border-[#8B4513] text-[#8B4513] hover:bg-[#8B4513] hover:text-white"
+              >
+                Iniciar Sesión
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
-      {/* Info Section */}
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">¿Por qué elegir La Pituca?</h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Desde 2021, nos hemos dedicado a ofrecer la mejor experiencia gastronómica 
-              en Chosica, combinando bebidas de calidad con exquisita comida a la carta.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <ChefHat className="h-8 w-8 text-amber-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Cocina de Calidad</h3>
-                <p className="text-gray-600">
-                  Platos preparados con los mejores ingredientes y recetas tradicionales.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Clock className="h-8 w-8 text-amber-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Horario Extendido</h3>
-                <p className="text-gray-600">
-                  Atención de 5:00 PM a 2:00 AM. Dos turnos: tarde y noche.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <MapPin className="h-8 w-8 text-amber-600" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Ubicación Privilegiada</h3>
-                <p className="text-gray-600">
-                  Jirón Chiclayo 388, Chosica. Fácil acceso y ambiente acogedor.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
+      <section className="relative bg-gradient-to-r from-[#8B4513] to-[#5D2E0C] text-white py-20">
+        <div className="absolute inset-0 opacity-10">
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage:
+                'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+            }}
+          />
         </div>
-      </section>
-
-      {/* Contact Section */}
-      <section className="py-16 bg-amber-900 text-white">
-        <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl font-bold mb-6">Visítanos Hoy</h2>
-              <div className="space-y-4">
-                <div className="flex items-center gap-4">
-                  <MapPin className="h-6 w-6 text-amber-300" />
-                  <div>
-                    <p className="font-semibold">Dirección</p>
-                    <p className="text-amber-100">Jirón Chiclayo 388, Chosica, Perú</p>
+              <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full mb-6">
+                <Star className="w-4 h-4 text-[#D4AF37]" />
+                <span className="text-sm font-medium">Desde 2021</span>
+              </div>
+              <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+                Bienvenido a <span className="text-[#D4AF37]">La Pituca</span>
+              </h1>
+              <p className="text-lg md:text-xl text-white/90 mb-8">
+                El restobar más acogedor de Chosica. Disfruta de la mejor comida peruana y bebidas en un ambiente
+                familiar único.
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Button
+                  size="lg"
+                  onClick={() => navigate('/login')}
+                  className="bg-[#D4AF37] text-[#1F2937] hover:bg-[#B8962F] font-semibold"
+                >
+                  <Users className="w-5 h-5 mr-2" />
+                  Soy Cliente
+                </Button>
+                <Button
+                  size="lg"
+                  variant="outline"
+                  onClick={() => navigate('/login')}
+                  className="border-white text-white hover:bg-white hover:text-[#8B4513]"
+                >
+                  <ChefHat className="w-5 h-5 mr-2" />
+                  Soy Trabajador
+                </Button>
+              </div>
+            </div>
+            <div className="hidden md:block">
+              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-[#D4AF37]">3+</div>
+                    <div className="text-white/80 text-sm">Años de experiencia</div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Clock className="h-6 w-6 text-amber-300" />
-                  <div>
-                    <p className="font-semibold">Horario de Atención</p>
-                    <p className="text-amber-100">Lunes a Domingo: 5:00 PM - 2:00 AM</p>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-[#D4AF37]">20</div>
+                    <div className="text-white/80 text-sm">Mesas disponibles</div>
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Phone className="h-6 w-6 text-amber-300" />
-                  <div>
-                    <p className="font-semibold">Teléfono</p>
-                    <p className="text-amber-100">+51 987 654 321</p>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-[#D4AF37]">50+</div>
+                    <div className="text-white/80 text-sm">Productos en carta</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-[#D4AF37]">4.8</div>
+                    <div className="text-white/80 text-sm">Calificación promedio</div>
                   </div>
                 </div>
               </div>
-            </div>
-            <div className="bg-white/10 rounded-2xl p-8">
-              <h3 className="text-2xl font-bold mb-4">¿Listo para reservar?</h3>
-              <p className="text-amber-100 mb-6">
-                Regístrate ahora y haz tu reserva de manera rápida y sencilla.
-                Disfruta de la mejor experiencia en La Pituca.
-              </p>
-              <Link to="/register">
-                <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-white w-full">
-                  Crear Cuenta y Reservar
-                </Button>
-              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-8">
-        <div className="container mx-auto px-4">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <div className="w-8 h-8 bg-amber-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">LP</span>
+      <section className="bg-white py-6 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="flex items-center gap-3 justify-center md:justify-start">
+              <div className="bg-[#8B4513]/10 p-3 rounded-full">
+                <Clock className="w-5 h-5 text-[#8B4513]" />
               </div>
-              <span className="text-white font-semibold">La Pituca</span>
+              <div>
+                <div className="font-semibold text-[#1F2937]">Horario de Atención</div>
+                <div className="text-sm text-[#6B7280]">5:00 PM - 2:00 AM</div>
+              </div>
             </div>
-            <p className="text-sm">
-              © 2024 La Pituca Restobar. Todos los derechos reservados.
+            <div className="flex items-center gap-3 justify-center md:justify-start">
+              <div className="bg-[#8B4513]/10 p-3 rounded-full">
+                <MapPin className="w-5 h-5 text-[#8B4513]" />
+              </div>
+              <div>
+                <div className="font-semibold text-[#1F2937]">Ubicación</div>
+                <div className="text-sm text-[#6B7280]">Jr. Chiclayo 388, Chosica</div>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 justify-center md:justify-start">
+              <div className="bg-[#8B4513]/10 p-3 rounded-full">
+                <Phone className="w-5 h-5 text-[#8B4513]" />
+              </div>
+              <div>
+                <div className="font-semibold text-[#1F2937]">Contacto</div>
+                <div className="text-sm text-[#6B7280]">987 654 321</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-[#1F2937] mb-4">
+              ¿Por qué elegir <span className="text-[#8B4513]">La Pituca</span>?
+            </h2>
+            <p className="text-[#6B7280] max-w-2xl mx-auto">
+              Ofrecemos la mejor experiencia gastronómica con productos de calidad y un servicio excepcional.
             </p>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature) => (
+              <div
+                key={feature.title}
+                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow text-center"
+              >
+                <div className="bg-[#8B4513]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-[#8B4513]">
+                  {feature.icon}
+                </div>
+                <h3 className="font-semibold text-[#1F2937] mb-2">{feature.title}</h3>
+                <p className="text-sm text-[#6B7280]">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-[#8B4513] py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">¿Listo para disfrutar de la experiencia La Pituca?</h2>
+          <p className="text-white/80 mb-8 max-w-2xl mx-auto">
+            Regístrate ahora y realiza tu primera reserva. Disfruta de promociones exclusivas para clientes
+            registrados.
+          </p>
+          <Button
+            size="lg"
+            onClick={() => navigate('/login')}
+            className="bg-[#D4AF37] text-[#1F2937] hover:bg-[#B8962F] font-semibold"
+          >
+            Comenzar Ahora
+            <ChevronRight className="w-5 h-5 ml-2" />
+          </Button>
+        </div>
+      </section>
+
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-[#1F2937] mb-4">
+              Lo que dicen nuestros <span className="text-[#8B4513]">clientes</span>
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial) => (
+              <div key={testimonial.name} className="bg-[#FDF8F3] rounded-xl p-6 border border-[#8B4513]/10">
+                <div className="flex gap-1 mb-4">
+                  {[...Array(testimonial.rating)].map((_, i) => (
+                    <Star key={`${testimonial.name}-${i}`} className="w-5 h-5 fill-[#D4AF37] text-[#D4AF37]" />
+                  ))}
+                </div>
+                <p className="text-[#1F2937] mb-4 italic">"{testimonial.comment}"</p>
+                <div className="font-semibold text-[#8B4513]">{testimonial.name}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <footer className="bg-[#1F2937] text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="bg-[#8B4513] p-2 rounded-lg">
+                  <GlassWater className="w-5 h-5 text-white" />
+                </div>
+                <span className="text-lg font-bold">La Pituca</span>
+              </div>
+              <p className="text-gray-400 text-sm">
+                Restobar familiar con la mejor comida peruana y bebidas de Chosica.
+              </p>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Horario</h4>
+              <ul className="text-gray-400 text-sm space-y-2">
+                <li>Lunes - Domingo</li>
+                <li>5:00 PM - 2:00 AM</li>
+                <li>Turno tarde: 5:00 PM - 10:00 PM</li>
+                <li>Turno noche: 10:00 PM - 2:00 AM</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Contacto</h4>
+              <ul className="text-gray-400 text-sm space-y-2">
+                <li>Jr. Chiclayo 388, Chosica</li>
+                <li>Tel: 987 654 321</li>
+                <li>Email: info@lapituca.com</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-4">Enlaces</h4>
+              <ul className="text-gray-400 text-sm space-y-2">
+                <li>
+                  <button onClick={() => navigate('/login')} className="hover:text-white transition-colors" type="button">
+                    Iniciar Sesión
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate('/login')} className="hover:text-white transition-colors" type="button">
+                    Registrarse
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </div>
+          <div className="border-t border-gray-700 mt-8 pt-8 text-center text-gray-400 text-sm">
+            © 2026 La Pituca Restobar. Todos los derechos reservados.
           </div>
         </div>
       </footer>

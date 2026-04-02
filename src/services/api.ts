@@ -60,12 +60,24 @@ const attachAuthInterceptor = (instance: ReturnType<typeof axios.create>) => {
     (error) => Promise.reject(error)
   );
 
-  instance.interceptors.response.use(
+instance.interceptors.response.use(
     (response) => response,
     (error) => {
-      if (error.response?.status === 401) {
+      const requestUrl = String(error.config?.url || '');
+      const normalizedUrl = requestUrl.startsWith('http')
+        ? requestUrl
+        : `${window.location.origin}${requestUrl.startsWith('/') ? requestUrl : `/${requestUrl}`}`;
+      const path = (() => {
+        try {
+          return new URL(normalizedUrl).pathname;
+        } catch {
+          return requestUrl;
+        }
+      })();
+      const isAuthEndpoint = /\/auth\/(login|register|forgot-password|verify-reset-token|reset-password)$/.test(path);
+
+      if (error.response?.status === 401 && !isAuthEndpoint) {
         localStorage.removeItem('auth-storage');
-        window.location.href = '/login';
       }
 
       const friendlyMessage = getFriendlyApiMessage(error);

@@ -6,10 +6,8 @@ import { useAuthStore } from '@/stores';
 
 // Public pages
 import { Welcome } from '@/pages/public/Welcome';
-import { Login } from '@/pages/public/Login';
-import { Register } from '@/pages/public/Register';
-import { ForgotPassword } from '@/pages/public/ForgotPassword';
-import { ResetPassword } from '@/pages/public/ResetPassword';
+import { AuthPage } from '@/pages/public/AuthPage';
+import { GoogleAuthCallback } from '@/pages/public/GoogleAuthCallback';
 
 // Admin pages
 import { Dashboard } from '@/pages/admin/Dashboard';
@@ -83,18 +81,18 @@ function App() {
     );
   }
 
-  return (
+return (
     <BrowserRouter>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={token ? <RoleRedirect /> : <Welcome />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/login" element={<AuthPage />} />
+        <Route path="/register" element={<AuthPage />} />
+        <Route path="/forgot-password" element={<AuthPage />} />
+        <Route path="/reset-password" element={<AuthPage />} />
         
         {/* OAuth Callback */}
-        <Route path="/auth/google/success" element={<RoleRedirect />} />
+        <Route path="/auth/google/success" element={<GoogleAuthCallback />} />
         
         {/* Redirect based on role */}
         <Route path="/redirect" element={<RoleRedirect />} />

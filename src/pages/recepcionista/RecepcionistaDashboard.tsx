@@ -27,7 +27,8 @@ export const RecepcionistaDashboard: React.FC = () => {
 
   const filteredReservas = reservas.filter(r => {
     const matchesSearch = 
-      r.usuario.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.usuario?.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.usuarioId || '').toString().includes(searchTerm) ||
       r.id.toString().includes(searchTerm);
     const matchesEstado = filterEstado === 'todos' || r.estado === filterEstado;
     return matchesSearch && matchesEstado;
@@ -199,7 +200,9 @@ export const RecepcionistaDashboard: React.FC = () => {
                     <CardTitle className="text-lg">Reserva #{reserva.id}</CardTitle>
                     {getEstadoBadge(reserva.estado)}
                   </div>
-                  <p className="text-sm text-gray-500">{reserva.usuario.username}</p>
+                    <p className="text-sm text-gray-500">
+                    {reserva.usuario?.username || `Usuario #${reserva.usuarioId ?? '-'}`}
+                  </p>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
@@ -219,7 +222,7 @@ export const RecepcionistaDashboard: React.FC = () => {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Grupo:</span>
-                      <span className="font-medium">{reserva.grupo.nombre}</span>
+                      <span className="font-medium">{reserva.grupo?.nombre || `#${reserva.grupoId ?? '-'}`}</span>
                     </div>
                     {reserva.fechaHoraExpiracionPago && reserva.estado === 'ESPERANDO PAGO' && (
                       <div className="mt-3 p-2 bg-yellow-50 rounded text-sm">
@@ -247,7 +250,7 @@ export const RecepcionistaDashboard: React.FC = () => {
                 {transacciones.slice(0, 8).map((transaccion) => (
                   <div key={transaccion.id} className="flex items-center justify-between border rounded-md p-3 text-sm">
                     <div>
-                      <p className="font-medium">Reserva #{transaccion.reserva.id}</p>
+                       <p className="font-medium">Reserva #{transaccion.reservaId ?? transaccion.reserva?.id ?? '-'}</p>
                       <p className="text-gray-500">{transaccion.estadoMercadoPago}</p>
                     </div>
                     <div className="text-right">

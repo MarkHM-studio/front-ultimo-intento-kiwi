@@ -263,8 +263,10 @@ export interface Transaccion {
   monto: number;
   fechaPago?: string;
   fechaActualizacion: string;
-  usuario: Usuario;
-  reserva: Reserva;
+  usuarioId?: number;
+  reservaId?: number;
+  usuario?: Usuario;
+  reserva?: Reserva;
 }
 
 export type TransaccionResponse = Transaccion;
@@ -323,7 +325,8 @@ export interface RegisterResponse {
   usuarioId: number;
   correo: string;
   rol: RolNombre;
-  proveedor: Provider;
+  proveedor?: Provider;
+  provider?: Provider;
   cliente: Cliente;
 }
 
@@ -361,6 +364,7 @@ export interface AuthMeResponse {
   usuarioId: number;
   correo: string;
   rol: RolNombre;
+  proveedor?: Provider;
   provider: Provider;
   estado: EstadoUsuario;
   clienteId?: number;
@@ -481,21 +485,28 @@ export interface ReservaResponse {
   horaReserva: string;
   numPersonas: number;
   estado: EstadoReserva;
+  usuarioId?: number;
+  grupoId?: number;
+  mesasIds?: number[];
+  ultimaTransaccionId?: number;
+  transaccionesIds?: number[];
+  fechaRegistro?: string;
   fechaHoraExpiracionPago?: string;
-  fechaHoraRegistro: string;
-  fechaHoraActualizacion: string;
-  usuario: Usuario;
-  grupo: Grupo;
+  fechaHoraRegistro?: string;
+  fechaHoraActualizacion?: string;
+  usuario?: Usuario;
+  grupo?: Grupo;
 }
 
 export interface MesasDisponiblesResponse {
   mesaId: number;
-  mesaNombre: string;
-  capacidad: number;
-  estado: EstadoMesa;
+  nombre?: string;
+  mesaNombre?: string;
+  ocupada?: boolean;
+  capacidad?: number;
+  estado?: EstadoMesa;
   horaDesocupacion?: string;
 }
-
 export interface CrearPreferenciaPagoRequest {
   reservaId: number;
   descripcion: string;
@@ -503,7 +514,12 @@ export interface CrearPreferenciaPagoRequest {
 }
 
 export interface CrearPreferenciaPagoResponse {
-  preferenceId: string;
+  transaccionId?: number;
+  reservaId?: number;
+  externalReference?: string;
+  mercadoPagoPreferenceId?: string;
+  preferenceId?: string;
+  estadoTransaccion?: string;
   initPoint: string;
   sandboxInitPoint: string;
 }
@@ -524,17 +540,23 @@ export interface EntradaRequest {
 
 export interface EntradaResponse {
   id: number;
+  productoId?: number;
+  insumoId?: number;
   cantidadTotal: number;
   unidadMedida: string;
   costoUnitario: number;
   costoTotal: number;
-  fechaHoraRegistro: string;
-  fechaHoraActualizacion: string;
+  proveedorId?: number;
+  usuarioId?: number;
+  fechaRegistro?: string;
+  fechaHoraRegistro?: string;
+  fechaHoraActualizacion?: string;
   producto?: Producto;
   insumo?: Insumo;
-  proveedor: Proveedor;
-  usuario: Usuario;
+  proveedor?: Proveedor;
+  usuario?: Usuario;
 }
+
 
 export interface InsumoRequest {
   nombre: string;
@@ -550,8 +572,9 @@ export interface InsumoResponse {
   precio: number;
   stock: number;
   unidadMedida: string;
-  fechaHoraRegistro: string;
-  fechaHoraActualizacion: string;
+  marcaId?: number;
+  fechaHoraRegistro?: string;
+  fechaHoraActualizacion?: string;
   marca?: Marca;
 }
 
@@ -572,8 +595,8 @@ export interface ProductoResponse {
   nombre: string;
   precio: number;
   stock: number;
-  fechaInscripcion: string;
-  fechaModificacion: string;
+  fechaInscripcion?: string;
+  fechaModificacion?: string;
   categoria: Categoria;
   marca?: Marca;
 }
@@ -618,8 +641,10 @@ export interface ProveedorResponse {
   telefono: string;
   correo: string;
   estado: EstadoUsuario;
-  fechaHoraRegistro: string;
-  fechaHoraActualizacion: string;
+  fechaRegistro?: string;
+  fechaActualizacion?: string;
+  fechaHoraRegistro?: string;
+  fechaHoraActualizacion?: string;
 }
 
 export interface UsuarioRequest {

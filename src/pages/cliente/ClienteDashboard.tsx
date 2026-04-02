@@ -34,6 +34,7 @@ export const ClienteDashboard: React.FC = () => {
     fetchReservasByUsuario,
     fetchMesasDisponibles,
     createReserva,
+    updateReserva,
     cancelarReserva,
     crearPreferenciaPago,
     clearPreferenciaPago
@@ -45,6 +46,8 @@ export const ClienteDashboard: React.FC = () => {
   const [hora, setHora] = useState('');
   const [mesasSeleccionadas, setMesasSeleccionadas] = useState<number[]>([]);
   const [numPersonas, setNumPersonas] = useState(2);
+  const [editReservaId, setEditReservaId] = useState<number | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     fetchReservasByUsuario();
@@ -58,27 +61,36 @@ export const ClienteDashboard: React.FC = () => {
 
   const handleCrearReserva = async () => {
     if (!user) return;
+    setErrorMessage('');
+    if (!fecha || !hora) return setErrorMessage('Selecciona fecha y hora.');
+    if (mesasSeleccionadas.length === 0) return setErrorMessage('Selecciona al menos una mesa.');
+    if (numPersonas < 1 || numPersonas > 20) return setErrorMessage('El número de personas debe estar entre 1 y 20.');
     
     try {
-      const reserva = await createReserva({
+      const payload = {
         fechaReserva: fecha,
         horaReserva: hora,
         numPersonas,
         usuarioId: user.usuarioId,
         mesasId: mesasSeleccionadas,
         sucursalId: 1
-      });
+      };
+      const reserva = editReservaId
+        ? await updateReserva(editReservaId, payload)
+        : await createReserva(payload);
       
       setIsNuevaReservaOpen(false);
+      setEditReservaId(null);
+      fetchReservasByUsuario();
       
-      // Crear preferencia de pago
-      await crearPreferenciaPago({
-        reservaId: reserva.id,
-        descripcion: `Reserva en La Pituca - ${fecha} ${hora}`,
-        monto: 50 // Monto fijo para reserva
-      });
-      
-      setIsPagoDialogOpen(true);
+      if (reserva.estado === 'ESPERANDO PAGO') {
+        await crearPreferenciaPago({
+          reservaId: reserva.id,
+          descripcion: `Reserva en La Pituca - ${fecha} ${hora}`,
+          monto: 50
+        });
+        setIsPagoDialogOpen(true);
+      }
     } catch (error) {
       console.error('Error creating reserva:', error);
     }
@@ -105,7 +117,7 @@ export const ClienteDashboard: React.FC = () => {
     }
   };
 
-  const toggleMesa = (mesaId: number) => {
+   const toggleMesa = (mesaId: number) => {
     if (mesasSeleccionadas.includes(mesaId)) {
       setMesasSeleccionadas(mesasSeleccionadas.filter(id => id !== mesaId));
     } else {
@@ -113,7 +125,9 @@ export const ClienteDashboard: React.FC = () => {
     }
   };
 
-  return (
+  const isMesaOcupada = (mesa: typeof mesasDisponibles[number]) => mesa.ocupada || mesa.estado === 'OCUPADO';
+
+   return (
     <MainLayout>
       <div className="space-y-6">
         {/* Header */}
@@ -125,6 +139,8 @@ export const ClienteDashboard: React.FC = () => {
           <Button 
             className="bg-amber-600 hover:bg-amber-700"
             onClick={() => {
+              setEditReservaId(null);
+              setErrorMessage('');
               setFecha('');
               setHora('');
               setMesasSeleccionadas([]);
@@ -267,6 +283,21 @@ export const ClienteDashboard: React.FC = () => {
                           <CreditCard className="mr-2 h-4 w-4" />
                           Pagar Ahora
                         </Button>
+                          <Button 
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => {
+                            setEditReservaId(reserva.id);
+                            setFecha(reserva.fechaReserva);
+                            setHora(reserva.horaReserva);
+                            setNumPersonas(reserva.numPersonas);
+                            setMesasSeleccionadas(reserva.mesasIds || []);
+                            setErrorMessage('');
+                            setIsNuevaReservaOpen(true);
+                          }}
+                        >
+                          Editar
+                        </Button>
                         <Button 
                           variant="outline"
                           className="w-full"
@@ -295,6 +326,7 @@ export const ClienteDashboard: React.FC = () => {
             </DialogHeader>
             
             <div className="space-y-4 py-4">
+                 {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Fecha</Label>
@@ -342,23 +374,23 @@ export const ClienteDashboard: React.FC = () => {
                         No hay mesas disponibles para esta fecha y hora
                       </p>
                     ) : (
-                      mesasDisponibles.map((mesa) => (
+                     mesasDisponibles.map((mesa) => (
                         <button
                           key={mesa.mesaId}
                           type="button"
                           className={`p-3 border rounded-lg text-center transition-colors ${
                             mesasSeleccionadas.includes(mesa.mesaId)
                               ? 'bg-amber-600 text-white border-amber-600'
-                              : mesa.estado === 'OCUPADO'
+                              : isMesaOcupada(mesa)
                               ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                               : 'hover:bg-amber-50 border-gray-300'
                           }`}
-                          onClick={() => mesa.estado === 'DESOCUPADO' && toggleMesa(mesa.mesaId)}
-                          disabled={mesa.estado === 'OCUPADO'}
+                          onClick={() => !isMesaOcupada(mesa) && toggleMesa(mesa.mesaId)}
+                          disabled={isMesaOcupada(mesa)}
                         >
-                          <p className="font-medium">{mesa.mesaNombre}</p>
+                          <p className="font-medium">{mesa.nombre || mesa.mesaNombre || `Mesa ${mesa.mesaId}`}</p>
                           <p className="text-xs">
-                            {mesa.estado === 'OCUPADO' ? 'Ocupada' : 'Disponible'}
+                            {isMesaOcupada(mesa) ? 'Ocupada' : 'Disponible'}
                           </p>
                         </button>
                       ))
@@ -382,7 +414,7 @@ export const ClienteDashboard: React.FC = () => {
                 onClick={handleCrearReserva}
                 disabled={!fecha || !hora || mesasSeleccionadas.length === 0}
               >
-                Continuar al Pago
+                {editReservaId ? 'Actualizar Reserva' : 'Continuar al Pago'}
               </Button>
             </DialogFooter>
           </DialogContent>

@@ -51,6 +51,7 @@ export const AlmaceneroDashboard: React.FC = () => {
     proveedorId: 0,
     usuarioId: user?.usuarioId || 0
   });
+  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     fetchEntradas();
@@ -59,8 +60,14 @@ export const AlmaceneroDashboard: React.FC = () => {
     fetchProveedores();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
+    if (!formData.proveedorId) return setFormError('Selecciona un proveedor.');
+    if (!formData.unidadMedida.trim()) return setFormError('La unidad de medida es obligatoria.');
+    if (formData.cantidadTotal <= 0 || formData.costoUnitario <= 0) {
+      return setFormError('Cantidad y costo unitario deben ser mayores a 0.');
+    }
     try {
       await createEntrada({
         ...formData,
@@ -120,6 +127,7 @@ export const AlmaceneroDashboard: React.FC = () => {
               <form onSubmit={handleSubmit}>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
+                    {formError && <p className="text-sm text-red-600">{formError}</p>}
                     <Label>Tipo de Entrada</Label>
                     <div className="flex gap-4">
                       <Button
@@ -171,7 +179,7 @@ export const AlmaceneroDashboard: React.FC = () => {
                           <SelectValue placeholder="Selecciona un producto" />
                         </SelectTrigger>
                         <SelectContent>
-                          {productos.filter(p => p.categoria.id === 3).map((p) => (
+                           {productos.filter(p => ![1, 2].includes(p.categoria.id)).map((p) => (
                             <SelectItem key={p.id} value={p.id.toString()}>
                               {p.nombre} (Stock: {p.stock})
                             </SelectItem>
@@ -278,7 +286,7 @@ export const AlmaceneroDashboard: React.FC = () => {
                   <p className="text-3xl font-bold text-gray-900">
                     {entradas.filter(e => {
                       const hoy = new Date().toISOString().split('T')[0];
-                      return e.fechaHoraRegistro.startsWith(hoy);
+                      return (e.fechaRegistro || e.fechaHoraRegistro || '').startsWith(hoy);
                     }).length}
                   </p>
                 </div>
@@ -374,7 +382,7 @@ export const AlmaceneroDashboard: React.FC = () => {
                             {entrada.producto?.nombre || entrada.insumo?.nombre}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {entrada.proveedor.razonSocial}
+                            {entrada.proveedor?.razonSocial || `Proveedor #${entrada.proveedorId ?? '-'}`}
                           </p>
                         </div>
                         <div className="text-right">
@@ -385,7 +393,7 @@ export const AlmaceneroDashboard: React.FC = () => {
                         </div>
                       </div>
                       <p className="text-xs text-gray-400 mt-1">
-                        {new Date(entrada.fechaHoraRegistro).toLocaleString()}
+                        {new Date(entrada.fechaRegistro || entrada.fechaHoraRegistro || Date.now()).toLocaleString()}
                       </p>
                     </div>
                   ))
