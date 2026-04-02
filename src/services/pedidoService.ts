@@ -7,16 +7,25 @@ import type {
 } from '@/types';
 
 export const pedidoService = {
+  normalizePedido: (p: PedidoResponse): PedidoResponse => ({
+    ...p,
+    fechaHoraRegistro: (p as any).fechaHoraRegistro ?? (p as any).fechaRegistro,
+    productoId: (p as any).productoId ?? (p as any).producto?.id,
+    comprobanteId: (p as any).comprobanteId ?? (p as any).comprobante?.id,
+    tipoEntregaId: (p as any).tipoEntregaId ?? (p as any).tipoEntrega?.id,
+    usuarioId: (p as any).usuarioId ?? (p as any).usuario?.id,
+  }),
+
   // Get all pedidos
   getAll: async (): Promise<PedidoResponse[]> => {
     const response = await api.get<PedidoResponse[]>('/pedido');
-    return response.data;
+    return response.data.map((p) => pedidoService.normalizePedido(p));
   },
 
   // Get pedidos by estado
   getByEstado: async (estado: EstadoPedido): Promise<PedidoResponse[]> => {
     const response = await api.get<PedidoResponse[]>(`/pedido?estado=${estado}`);
-    return response.data;
+    return response.data.map((p) => pedidoService.normalizePedido(p));
   },
 
   // Create pedido

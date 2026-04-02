@@ -11,8 +11,14 @@ import type {
 export const comprobanteService = {
   normalizeComprobanteFields: (item: ComprobanteResponse): ComprobanteResponse => ({
     ...item,
+    IGV: (item as any).IGV ?? (item as any).igv ?? 0,
+    igv: (item as any).igv ?? (item as any).IGV ?? 0,
     fechaHoraApertura: (item as any).fechaHoraApertura ?? (item as any).fechaHoraApertura_ ?? (item as any).fechaHora_registro ?? (item as any).fechaHoraRegistro,
+    fechaHora_apertura: (item as any).fechaHora_apertura ?? (item as any).fechaHoraApertura,
     fechaHoraVenta: (item as any).fechaHoraVenta ?? (item as any).fechaHora_venta ?? (item as any).fechaHora_actualizacion ?? (item as any).fechaHoraActualizacion,
+    fechaHora_venta: (item as any).fechaHora_venta ?? (item as any).fechaHoraVenta,
+    grupo: (item as any).grupo ?? (item as any).grupoResponse ?? undefined,
+    grupoResponse: (item as any).grupoResponse ?? (item as any).grupo ?? undefined,
   }),
 
   // Get all comprobantes
@@ -30,13 +36,13 @@ export const comprobanteService = {
   // Create comprobante
   create: async (data: ComprobanteRequest): Promise<ComprobanteResponse> => {
     const response = await api.post<ComprobanteResponse>('/comprobante', data);
-    return response.data;
+    return comprobanteService.normalizeComprobanteFields(response.data);
   },
 
   // Asignar mesas a comprobante
   asignarMesas: async (data: AsignarMesasRequest): Promise<ComprobanteResponse> => {
     const response = await api.put<ComprobanteResponse>('/comprobante/asignar-mesas', data);
-    return response.data;
+    return comprobanteService.normalizeComprobanteFields(response.data);
   },
 
   // Registrar venta

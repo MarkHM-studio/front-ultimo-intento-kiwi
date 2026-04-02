@@ -383,22 +383,27 @@ export interface ComprobanteRequest {
 export interface ComprobanteResponse {
   id: number;
   total: number;
-  igv: number;
-  subtotal: number;
-  fechaHoraApertura: string;
+  IGV?: number;
+  igv?: number;
+  subtotal?: number;
+  fechaHora_apertura?: string;
+  fechaHoraApertura?: string;
   fechaHoraVenta?: string;
+  fechaHora_venta?: string;
   estado: EstadoComprobante;
+  grupoResponse?: GrupoResponse | null;
   grupo?: GrupoResponse;
-  usuario: Usuario;
-  sucursal: Sucursal;
+  usuario?: Usuario;
+  sucursal?: Sucursal;
 }
 
 export interface GrupoResponse {
   id: number;
   nombre: string;
-  estado: string;
-  tipoGrupo: number;
-  mesas: Mesa[];
+  estado?: string;
+  tipoGrupo?: number;
+  mesas?: Mesa[];
+  detalleMesaResponse?: { id: number; grupoId: number; mesaId: number }[];
 }
 
 export interface AsignarMesasRequest {
@@ -434,37 +439,48 @@ export interface PedidoRequest {
 export interface PedidoResponse {
   id: number;
   cantidad: number;
-  precioUnitario: number;
+  precioUnitario?: number;
   subtotal: number;
   estado: EstadoPedido;
-  fechaHoraRegistro: string;
-  fechaHoraActualizacion: string;
-  producto: Producto;
-  comprobante: Comprobante;
-  tipoEntrega: TipoEntrega;
-  usuario: Usuario;
+  fechaRegistro?: string;
+  fechaHoraRegistro?: string;
+  fechaHoraActualizacion?: string;
+  comprobanteId?: number;
+  productoId?: number;
+  tipoEntregaId?: number;
+  usuarioId?: number;
+  producto?: Producto;
+  comprobante?: Comprobante;
+  tipoEntrega?: TipoEntrega;
+  usuario?: Usuario;
 }
 
 export interface PedidoDetalleResponse {
   id: number;
   cantidad: number;
-  precioUnitario: number;
+  precioUnitario?: number;
   subtotal: number;
   estado: EstadoPedido;
-  fechaHoraRegistro: string;
-  fechaHoraActualizacion: string;
-  producto: Producto;
-  tipoEntrega: TipoEntrega;
-  usuario: Usuario;
+  fechaHoraRegistro?: string;
+  fechaHoraActualizacion?: string;
+  producto?: Producto;
+  comprobante?: Comprobante;
+  tipoEntrega?: TipoEntrega;
+  tipoEntregaResponse?: TipoEntrega;
+  usuario?: Usuario;
+  usuarioResponse?: Usuario;
 }
 
 export interface MesasOcupadasResponse {
   mesaId: number;
-  mesaNombre: string;
+  nombre?: string;
+  mesaNombre?: string;
   grupoId: number;
-  grupoNombre: string;
-  comprobanteId: number;
-}
+  estadoMesa?: string;
+  grupoNombre?: string;
+  comprobanteId?: number | null;
+  estadoComprobante?: string | null;
+} 
 
 // ============================================
 // REQUESTS Y RESPONSES - RESERVA

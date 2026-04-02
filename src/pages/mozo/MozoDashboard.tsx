@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useComprobanteStore, usePedidoStore, useAdminStore } from '@/stores';
+import { useComprobanteStore, usePedidoStore } from '@/stores';
 import { MainLayout } from '@/components/common/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,12 +31,12 @@ export const MozoDashboard: React.FC = () => {
     comprobantes, 
     fetchComprobantes, 
     createComprobante,
+    asignarMesas,
     fetchPedidosByComprobante,
     pedidosComprobante,
     mesasOcupadas,
     fetchMesasOcupadas
   } = useComprobanteStore();
-  const { productos, fetchProductos } = useAdminStore();
   const { createPedido, updatePedido } = usePedidoStore();
   
   const [isNuevoComprobanteOpen, setIsNuevoComprobanteOpen] = useState(false);
@@ -44,6 +44,9 @@ export const MozoDashboard: React.FC = () => {
   const [isEditarPedidoOpen, setIsEditarPedidoOpen] = useState(false);
   const [selectedComprobante, setSelectedComprobante] = useState<number | null>(null);
   const [editingPedido, setEditingPedido] = useState<number | null>(null);
+  const [isAsignarMesasOpen, setIsAsignarMesasOpen] = useState(false);
+  const [mesasSeleccionadas, setMesasSeleccionadas] = useState<number[]>([]);
+  const [nombreGrupo, setNombreGrupo] = useState('');
   const [formData, setFormData] = useState<PedidoRequest>({
     cantidad: 1,
     comprobanteId: 0,
@@ -54,7 +57,6 @@ export const MozoDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchComprobantes();
-    fetchProductos();
     fetchMesasOcupadas();
   }, []);
 
@@ -123,17 +125,39 @@ export const MozoDashboard: React.FC = () => {
     setFormData({
       cantidad: pedido.cantidad,
       comprobanteId: selectedComprobante || 0,
-      productoId: pedido.producto.id,
-      tipoEntregaId: typeof pedido.tipoEntrega === 'object' && pedido.tipoEntrega.id ? pedido.tipoEntrega.id : 1,
+      productoId: pedido.producto?.id || 0,
+      tipoEntregaId: (pedido.tipoEntregaResponse?.id || pedido.tipoEntrega?.id || 1),
       usuarioId: user?.usuarioId || 0
     });
     setIsEditarPedidoOpen(true);
   };
 
   const getTipoEntregaBadge = (tipo: any) => {
-    const tipoStr = typeof tipo === 'string' ? tipo : tipo.nombre;
+    const tipoStr = typeof tipo === 'string' ? tipo : tipo?.nombre || 'COMER';
     if (tipoStr === 'COMER') return <Badge className="bg-blue-100 text-blue-800">Para Comer</Badge>;
     return <Badge className="bg-orange-100 text-orange-800">Para Llevar</Badge>;
+  };
+
+  const handleAsignarMesas = async () => {
+    if (!selectedComprobante || mesasSeleccionadas.length === 0) return;
+    try {
+      await asignarMesas({
+        comprobanteId: selectedComprobante,
+        mesasId: mesasSeleccionadas,
+        nombreGrupo
+      });
+      setIsAsignarMesasOpen(false);
+      setMesasSeleccionadas([]);
+      setNombreGrupo('');
+      fetchComprobantes();
+      fetchMesasOcupadas();
+    } catch (error) {
+      console.error('Error asignando mesas:', error);
+    }
+  };
+
+  const toggleMesa = (id: number) => {
+    setMesasSeleccionadas(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]);
   };
 
   const getEstadoBadge = (estado: string) => {
@@ -238,11 +262,11 @@ export const MozoDashboard: React.FC = () => {
                         <div>
                           <p className="font-medium">Comprobante #{comprobante.id}</p>
                           <p className="text-sm text-gray-500">
-                            {new Date(comprobante.fechaHoraApertura).toLocaleString()}
+                            {new Date(comprobante.fechaHoraApertura || comprobante.fechaHora_apertura || Date.now()).toLocaleString()}
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold text-lg">S/ {comprobante.total.toFixed(2)}</p>
+                          <p className="font-bold text-lg">S/ {(comprobante.total || 0).toFixed(2)}</p>
                           <Badge variant="outline">{comprobante.estado}</Badge>
                         </div>
                       </div>
@@ -262,14 +286,23 @@ export const MozoDashboard: React.FC = () => {
                   Pedidos {selectedComprobante && `#${selectedComprobante}`}
                 </CardTitle>
                 {selectedComprobante && (
-                  <Button 
-                    size="sm" 
-                    className="bg-amber-600 hover:bg-amber-700"
-                    onClick={() => setIsNuevoPedidoOpen(true)}
-                  >
-                    <Plus className="mr-1 h-4 w-4" />
-                    Agregar
-                  </Button>
+                   <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      onClick={() => setIsAsignarMesasOpen(true)}
+                    >
+                      Asignar Mesas
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      className="bg-amber-600 hover:bg-amber-700"
+                      onClick={() => setIsNuevoPedidoOpen(true)}
+                    >
+                      <Plus className="mr-1 h-4 w-4" />
+                      Agregar
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardHeader>
@@ -284,9 +317,9 @@ export const MozoDashboard: React.FC = () => {
                     <div key={pedido.id} className="p-3 border rounded-lg">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-medium">{pedido.producto.nombre}</p>
+                          <p className="font-medium">{pedido.producto?.nombre || `Producto #${pedido.id}`}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            {getTipoEntregaBadge(pedido.tipoEntrega)}
+                            {getTipoEntregaBadge(pedido.tipoEntregaResponse || pedido.tipoEntrega)}
                             {getEstadoBadge(pedido.estado)}
                           </div>
                         </div>
@@ -333,7 +366,7 @@ export const MozoDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Dialog Nuevo Pedido */}
+         {/* Dialog Nuevo Pedido */}
         <Dialog open={isNuevoPedidoOpen} onOpenChange={setIsNuevoPedidoOpen}>
           <DialogContent>
             <DialogHeader>
@@ -345,22 +378,14 @@ export const MozoDashboard: React.FC = () => {
             <form onSubmit={handleCrearPedido}>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Producto</Label>
-                  <Select 
-                    value={formData.productoId.toString()} 
-                    onValueChange={(value) => setFormData({ ...formData, productoId: parseInt(value) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un producto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {productos.map((p) => (
-                        <SelectItem key={p.id} value={p.id.toString()}>
-                          {p.nombre} - S/ {p.precio.toFixed(2)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Producto ID</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.productoId || ''}
+                    onChange={(e) => setFormData({ ...formData, productoId: parseInt(e.target.value) || 0 })}
+                    placeholder="Ejemplo: 15"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Cantidad</Label>
@@ -408,22 +433,14 @@ export const MozoDashboard: React.FC = () => {
             <form onSubmit={handleEditarPedido}>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Producto</Label>
-                  <Select 
-                    value={formData.productoId.toString()} 
-                    onValueChange={(value) => setFormData({ ...formData, productoId: parseInt(value) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un producto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {productos.map((p) => (
-                        <SelectItem key={p.id} value={p.id.toString()}>
-                          {p.nombre} - S/ {p.precio.toFixed(2)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>Producto ID</Label>
+                  <Input
+                    type="number"
+                    min="1"
+                    value={formData.productoId || ''}
+                    onChange={(e) => setFormData({ ...formData, productoId: parseInt(e.target.value) || 0 })}
+                    placeholder="Ejemplo: 15"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label>Cantidad</Label>
@@ -459,6 +476,52 @@ export const MozoDashboard: React.FC = () => {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={isAsignarMesasOpen} onOpenChange={setIsAsignarMesasOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Asignar mesas al comprobante</DialogTitle>
+              <DialogDescription>Solo mesas no ocupadas se pueden asignar.</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Nombre de grupo (opcional)</Label>
+                <Input value={nombreGrupo} onChange={(e) => setNombreGrupo(e.target.value)} placeholder="Grupo Cumpleaños" />
+              </div>
+              <div className="space-y-2">
+                <Label>Mesas ocupadas actualmente</Label>
+                <div className="text-xs text-gray-500">
+                  {mesasOcupadas.length === 0 ? 'No hay mesas ocupadas.' : mesasOcupadas.map(m => m.nombre || m.mesaNombre || `Mesa ${m.mesaId}`).join(', ')}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Mesas a asignar</Label>
+                <div className="grid grid-cols-4 gap-2">
+                  {Array.from({ length: 20 }, (_, idx) => idx + 1).map((mesaId) => {
+                    const ocupada = mesasOcupadas.some(m => m.mesaId === mesaId);
+                    return (
+                      <button
+                        key={mesaId}
+                        type="button"
+                        onClick={() => !ocupada && toggleMesa(mesaId)}
+                        disabled={ocupada}
+                        className={`rounded border p-2 text-sm ${ocupada ? 'bg-gray-100 text-gray-400' : mesasSeleccionadas.includes(mesaId) ? 'bg-amber-600 text-white' : ''}`}
+                      >
+                        M{mesaId}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsAsignarMesasOpen(false)}>Cancelar</Button>
+              <Button className="bg-amber-600 hover:bg-amber-700" onClick={handleAsignarMesas} disabled={!selectedComprobante || mesasSeleccionadas.length === 0}>
+                Asignar
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

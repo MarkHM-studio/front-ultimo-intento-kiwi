@@ -154,7 +154,7 @@ export const CajeroDashboard: React.FC = () => {
         </div>
 
         {/* Comprobantes Abiertos */}
-        <Card>
+             <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5" />
@@ -179,18 +179,18 @@ export const CajeroDashboard: React.FC = () => {
                         </Badge>
                       </div>
                       <p className="text-sm text-gray-500">
-                        {new Date(comprobante.fechaHoraApertura).toLocaleString()}
+                        {new Date(comprobante.fechaHoraApertura || comprobante.fechaHora_apertura || Date.now()).toLocaleString()}
                       </p>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500">Subtotal:</span>
-                          <span>S/ {comprobante.subtotal.toFixed(2)}</span>
+                          <span>S/ {(comprobante.subtotal || 0).toFixed(2)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500">IGV:</span>
-                          <span>S/ {comprobante.igv.toFixed(2)}</span>
+                          <span>S/ {(comprobante.igv || comprobante.IGV || 0).toFixed(2)}</span>
                         </div>
                         <div className="flex items-center justify-between text-lg font-bold">
                           <span>Total:</span>
@@ -247,7 +247,7 @@ export const CajeroDashboard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Pedidos del comprobante */}
+                 {/* Pedidos del comprobante */}
                 {pedidosComprobante.length > 0 && (
                   <div className="mb-4">
                     <h4 className="font-medium mb-2">Detalle de Pedidos:</h4>
@@ -262,7 +262,7 @@ export const CajeroDashboard: React.FC = () => {
                       <TableBody>
                         {pedidosComprobante.map((pedido) => (
                           <TableRow key={pedido.id}>
-                            <TableCell>{pedido.producto.nombre}</TableCell>
+                            <TableCell>{pedido.producto?.nombre || `Producto #${pedido.id}`}</TableCell>
                             <TableCell className="text-right">x{pedido.cantidad}</TableCell>
                             <TableCell className="text-right">S/ {pedido.subtotal.toFixed(2)}</TableCell>
                           </TableRow>

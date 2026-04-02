@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { usePedidoStore, useAdminStore } from '@/stores';
+import { usePedidoStore } from '@/stores';
 import { MainLayout } from '@/components/common/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,10 @@ import { ChefHat, Clock, CheckCircle, Utensils, AlertCircle } from 'lucide-react
 
 export const CocineroDashboard: React.FC = () => {
   const { pedidos, fetchPedidos, marcarPreparando, marcarListo, isLoading } = usePedidoStore();
-  const { productos, fetchProductos } = useAdminStore();
   const [activeTab, setActiveTab] = useState<'pendientes' | 'preparando' | 'todos'>('pendientes');
 
   useEffect(() => {
     fetchPedidos();
-    fetchProductos();
     
     // Actualizar cada 10 segundos
     const interval = setInterval(() => {
@@ -23,11 +21,7 @@ export const CocineroDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Filtrar solo pedidos de productos que son platos (categoría 1 = Plato gastronómico, 4 = Postres, 5 = Entradas)
-  const pedidosCocina = pedidos.filter(p => {
-    const producto = productos.find(prod => prod.id === p.producto.id);
-    return producto && (producto.categoria.id === 1 || producto.categoria.id === 4 || producto.categoria.id === 5);
-  });
+  const pedidosCocina = pedidos;
 
   const pedidosPendientesCocina = pedidosCocina.filter(p => p.estado === 'PENDIENTE');
   const pedidosPreparandoCocina = pedidosCocina.filter(p => p.estado === 'PREPARANDO');
@@ -177,11 +171,11 @@ export const CocineroDashboard: React.FC = () => {
               <Card key={pedido.id} className={`${pedido.estado === 'PENDIENTE' ? 'border-yellow-400' : ''}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{pedido.producto.nombre}</CardTitle>
+                    <CardTitle className="text-lg">{pedido.producto?.nombre || `Producto #${pedido.productoId ?? pedido.id}`}</CardTitle>
                     {getEstadoBadge(pedido.estado)}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    {getTipoEntregaBadge(pedido.tipoEntrega.nombre)}
+                    {getTipoEntregaBadge(pedido.tipoEntrega)}
                     <span className="text-sm text-gray-500">x{pedido.cantidad}</span>
                   </div>
                 </CardHeader>
@@ -189,17 +183,17 @@ export const CocineroDashboard: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Comprobante:</span>
-                      <span className="font-medium">#{pedido.comprobante.id}</span>
+                      <span className="font-medium">#{pedido.comprobante?.id ?? pedido.comprobanteId ?? '-'}</span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Hora:</span>
                       <span className="font-medium">
-                        {new Date(pedido.fechaHoraRegistro).toLocaleTimeString()}
+                        {new Date(pedido.fechaHoraRegistro || pedido.fechaRegistro || Date.now()).toLocaleTimeString()}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Mozo:</span>
-                      <span className="font-medium">{pedido.usuario.username}</span>
+                      <span className="font-medium">{pedido.usuario?.username || `Mozo #${pedido.usuarioId ?? '-'}`}</span>
                     </div>
                     
                     {pedido.estado === 'PENDIENTE' && (
