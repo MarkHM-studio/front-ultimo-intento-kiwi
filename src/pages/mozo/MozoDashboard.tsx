@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { useComprobanteStore, usePedidoStore } from '@/stores';
 import { MainLayout } from '@/components/common/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,9 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, ShoppingCart, Edit, CheckCircle, Users, Table as TableIcon } from 'lucide-react';
-import type { PedidoRequest } from '@/types';
+import { Plus, ShoppingCart, Edit, CheckCircle, Users, Table as TableIcon, Trash2 } from 'lucide-react';
+import type { PedidoRequest, ProductoResponse } from '@/types';
 import { useAuthStore } from '@/stores';
+import { toast } from 'sonner';
+import { adminService } from '@/services/adminService';
 
 export const MozoDashboard: React.FC = () => {
   const { user } = useAuthStore();
@@ -37,7 +40,7 @@ export const MozoDashboard: React.FC = () => {
     mesasOcupadas,
     fetchMesasOcupadas
   } = useComprobanteStore();
-  const { createPedido, updatePedido } = usePedidoStore();
+  const { createPedido, updatePedido, deletePedido } = usePedidoStore();
   
   const [isNuevoComprobanteOpen, setIsNuevoComprobanteOpen] = useState(false);
   const [isNuevoPedidoOpen, setIsNuevoPedidoOpen] = useState(false);
@@ -47,6 +50,8 @@ export const MozoDashboard: React.FC = () => {
   const [isAsignarMesasOpen, setIsAsignarMesasOpen] = useState(false);
   const [mesasSeleccionadas, setMesasSeleccionadas] = useState<number[]>([]);
   const [nombreGrupo, setNombreGrupo] = useState('');
+  const [productosDisponibles, setProductosDisponibles] = useState<ProductoResponse[]>([]);
+  const [productosDisponiblesError, setProductosDisponiblesError] = useState<string | null>(null);
   const [formData, setFormData] = useState<PedidoRequest>({
     cantidad: 1,
     comprobanteId: 0,
@@ -60,14 +65,39 @@ export const MozoDashboard: React.FC = () => {
     fetchMesasOcupadas();
   }, []);
 
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof AxiosError) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message;
+      return backendMessage || fallback;
+    }
+    return fallback;
+  };
+
+  const fetchProductosDisponibles = async () => {
+    try {
+      const productos = await adminService.getProductos();
+      setProductosDisponibles(productos.filter((product) => product.stock > 0));
+      setProductosDisponiblesError(null);
+    } catch (error) {
+      setProductosDisponibles([]);
+      setProductosDisponiblesError(getErrorMessage(error, 'No se pudo cargar el listado de productos disponibles.'));
+    }
+  };
+
+  const openNuevoPedido = async () => {
+    await fetchProductosDisponibles();
+    setIsNuevoPedidoOpen(true);
+  };
+
   const comprobantesAbiertos = comprobantes.filter(c => c.estado === 'ABIERTO');
 
   const handleCrearComprobante = async () => {
     try {
       await createComprobante({ sucursalId: 1 }); // Default sucursal
       setIsNuevoComprobanteOpen(false);
+      toast.success('Comprobante creado correctamente.');
     } catch (error) {
-      console.error('Error creating comprobante:', error);
+      toast.error(getErrorMessage(error, 'No se pudo crear el comprobante.'));
     }
   };
 
@@ -76,11 +106,16 @@ export const MozoDashboard: React.FC = () => {
     await fetchPedidosByComprobante(comprobanteId);
   };
 
-  const handleCrearPedido = async (e: React.FormEvent) => {
+   const handleCrearPedido = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedComprobante) return;
     
     try {
+      if (!formData.productoId) {
+        toast.error('Debes seleccionar un producto disponible.');
+        return;
+      }
+
       await createPedido({
         ...formData,
         comprobanteId: selectedComprobante,
@@ -96,8 +131,10 @@ export const MozoDashboard: React.FC = () => {
       });
       await fetchPedidosByComprobante(selectedComprobante);
       fetchComprobantes();
+      await fetchProductosDisponibles();
+      toast.success('Pedido agregado correctamente.');
     } catch (error) {
-      console.error('Error creating pedido:', error);
+      toast.error(getErrorMessage(error, 'No se pudo agregar el pedido.'));
     }
   };
 
@@ -115,8 +152,10 @@ export const MozoDashboard: React.FC = () => {
       setEditingPedido(null);
       await fetchPedidosByComprobante(selectedComprobante);
       fetchComprobantes();
+      await fetchProductosDisponibles();
+      toast.success('Pedido actualizado correctamente.');
     } catch (error) {
-      console.error('Error updating pedido:', error);
+      toast.error(getErrorMessage(error, 'No se pudo actualizar el pedido.'));
     }
   };
 
@@ -129,6 +168,7 @@ export const MozoDashboard: React.FC = () => {
       tipoEntregaId: (pedido.tipoEntregaResponse?.id || pedido.tipoEntrega?.id || 1),
       usuarioId: user?.usuarioId || 0
     });
+    void fetchProductosDisponibles();
     setIsEditarPedidoOpen(true);
   };
 
@@ -138,7 +178,7 @@ export const MozoDashboard: React.FC = () => {
     return <Badge className="bg-orange-100 text-orange-800">Para Llevar</Badge>;
   };
 
-  const handleAsignarMesas = async () => {
+   const handleAsignarMesas = async () => {
     if (!selectedComprobante || mesasSeleccionadas.length === 0) return;
     try {
       await asignarMesas({
@@ -151,8 +191,25 @@ export const MozoDashboard: React.FC = () => {
       setNombreGrupo('');
       fetchComprobantes();
       fetchMesasOcupadas();
+      toast.success('Mesas asignadas correctamente al comprobante.');
     } catch (error) {
-      console.error('Error asignando mesas:', error);
+      toast.error(getErrorMessage(error, 'No se pudieron asignar las mesas al comprobante.'));
+    }
+  };
+
+  const handleEliminarPedido = async (pedidoId: number) => {
+    if (!selectedComprobante) return;
+    const confirmado = window.confirm('¿Deseas eliminar este pedido? Esta acción actualizará el total del comprobante.');
+    if (!confirmado) return;
+
+    try {
+      await deletePedido(pedidoId);
+      await fetchPedidosByComprobante(selectedComprobante);
+      fetchComprobantes();
+      await fetchProductosDisponibles();
+      toast.success('Pedido eliminado correctamente.');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'No se pudo eliminar el pedido.'));
     }
   };
 
@@ -297,7 +354,7 @@ export const MozoDashboard: React.FC = () => {
                     <Button 
                       size="sm" 
                       className="bg-amber-600 hover:bg-amber-700"
-                      onClick={() => setIsNuevoPedidoOpen(true)}
+                      onClick={openNuevoPedido}
                     >
                       <Plus className="mr-1 h-4 w-4" />
                       Agregar
@@ -335,6 +392,14 @@ export const MozoDashboard: React.FC = () => {
                             >
                               <Edit className="h-3 w-3" />
                             </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-red-600 hover:text-red-700"
+                              onClick={() => handleEliminarPedido(pedido.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>   
                           </div>
                         </div>
                       </div>
@@ -366,7 +431,7 @@ export const MozoDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-         {/* Dialog Nuevo Pedido */}
+        {/* Dialog Nuevo Pedido */}
         <Dialog open={isNuevoPedidoOpen} onOpenChange={setIsNuevoPedidoOpen}>
           <DialogContent>
             <DialogHeader>
@@ -378,14 +443,37 @@ export const MozoDashboard: React.FC = () => {
             <form onSubmit={handleCrearPedido}>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Producto ID</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formData.productoId || ''}
-                    onChange={(e) => setFormData({ ...formData, productoId: parseInt(e.target.value) || 0 })}
-                    placeholder="Ejemplo: 15"
-                  />
+                  <Label>Producto</Label>
+                  {productosDisponiblesError ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-red-600">{productosDisponiblesError}</p>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={formData.productoId || ''}
+                        onChange={(e) => setFormData({ ...formData, productoId: parseInt(e.target.value) || 0 })}
+                        placeholder="Ingresa el ID de producto"
+                      />
+                    </div>
+                  ) : (
+                    <Select
+                      value={formData.productoId ? formData.productoId.toString() : ''}
+                      onValueChange={(value) => setFormData({ ...formData, productoId: parseInt(value) })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un producto con stock" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {productosDisponibles.length === 0 ? (
+                          <div className="px-2 py-1 text-sm text-gray-500">No hay productos con stock disponible.</div>
+                        ) : productosDisponibles.map((producto) => (
+                          <SelectItem key={producto.id} value={producto.id.toString()}>
+                            {producto.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Cantidad</Label>
@@ -424,7 +512,7 @@ export const MozoDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Dialog Editar Pedido */}
+         {/* Dialog Editar Pedido */}
         <Dialog open={isEditarPedidoOpen} onOpenChange={setIsEditarPedidoOpen}>
           <DialogContent>
             <DialogHeader>
@@ -433,14 +521,37 @@ export const MozoDashboard: React.FC = () => {
             <form onSubmit={handleEditarPedido}>
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Producto ID</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formData.productoId || ''}
-                    onChange={(e) => setFormData({ ...formData, productoId: parseInt(e.target.value) || 0 })}
-                    placeholder="Ejemplo: 15"
-                  />
+                  <Label>Producto</Label>
+                  {productosDisponiblesError ? (
+                    <div className="space-y-2">
+                      <p className="text-sm text-red-600">{productosDisponiblesError}</p>
+                      <Input
+                        type="number"
+                        min="1"
+                        value={formData.productoId || ''}
+                        onChange={(e) => setFormData({ ...formData, productoId: parseInt(e.target.value) || 0 })}
+                        placeholder="Ingresa el ID de producto"
+                      />
+                    </div>
+                  ) : (
+                    <Select
+                      value={formData.productoId ? formData.productoId.toString() : ''}
+                      onValueChange={(value) => setFormData({ ...formData, productoId: parseInt(value) })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona un producto con stock" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {productosDisponibles.length === 0 ? (
+                          <div className="px-2 py-1 text-sm text-gray-500">No hay productos con stock disponible.</div>
+                        ) : productosDisponibles.map((producto) => (
+                          <SelectItem key={producto.id} value={producto.id.toString()}>
+                            {producto.nombre}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Cantidad</Label>

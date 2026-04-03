@@ -415,9 +415,9 @@ export interface AsignarMesasRequest {
 export interface RegistrarVentaRequest {
   usuarioId: number;
   comprobanteId: number;
-  tiposPago: TipoPago[];
+  tipoPagoId: number[];
   montos: number[];
-  billetera?: TipoBilleteraVirtual;
+  tipoBilleteraVirtualId?: number;
   tipoComprobante: TipoComprobante;
   dni?: string;
   ruc?: string;

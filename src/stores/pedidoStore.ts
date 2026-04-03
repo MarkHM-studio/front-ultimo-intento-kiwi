@@ -22,6 +22,7 @@ interface PedidoState {
   fetchPedidosByEstado: (estado: EstadoPedido) => Promise<void>;
   createPedido: (data: PedidoRequest) => Promise<PedidoDetalleResponse>;
   updatePedido: (id: number, data: PedidoRequest) => Promise<PedidoDetalleResponse>;
+  deletePedido: (id: number) => Promise<void>;
   marcarPreparando: (id: number) => Promise<void>;
   marcarListo: (id: number) => Promise<void>;
   clearPedidoActual: () => void;
@@ -110,6 +111,24 @@ export const usePedidoStore = create<PedidoState>((set, get) => ({
       set({ 
         error: error.response?.data?.message || 'Error al actualizar pedido',
         isLoading: false 
+      });
+      throw error;
+    }
+  },
+  
+   // Delete pedido
+  deletePedido: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await pedidoService.delete(id);
+      set(state => ({
+        pedidos: state.pedidos.filter(p => p.id !== id),
+        isLoading: false
+      }));
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || 'Error al eliminar pedido',
+        isLoading: false
       });
       throw error;
     }

@@ -60,8 +60,10 @@ export const CocineroDashboard: React.FC = () => {
     }
   };
 
-  const getTipoEntregaBadge = (tipo: any) => {
-    const tipoStr = typeof tipo === 'string' ? tipo : tipo.nombre;
+  const getTipoEntregaBadge = (tipo?: any, tipoEntregaId?: number) => {
+    const tipoStr = typeof tipo === 'string'
+      ? tipo
+      : tipo?.nombre ?? (tipoEntregaId === 1 ? 'COMER' : tipoEntregaId === 2 ? 'LLEVAR' : 'COMER');
     if (tipoStr === 'COMER') return <Badge variant="outline" className="text-blue-600 border-blue-300">Comer</Badge>;
     return <Badge variant="outline" className="text-orange-600 border-orange-300">Llevar</Badge>;
   };
@@ -159,7 +161,7 @@ export const CocineroDashboard: React.FC = () => {
           </Button>
         </div>
 
-        {/* Pedidos Grid */}
+         {/* Pedidos Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {getPedidosToShow().length === 0 ? (
             <div className="col-span-full text-center py-12">
@@ -175,7 +177,7 @@ export const CocineroDashboard: React.FC = () => {
                     {getEstadoBadge(pedido.estado)}
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    {getTipoEntregaBadge(pedido.tipoEntrega)}
+                    {getTipoEntregaBadge(pedido.tipoEntrega, pedido.tipoEntregaId)}
                     <span className="text-sm text-gray-500">x{pedido.cantidad}</span>
                   </div>
                 </CardHeader>

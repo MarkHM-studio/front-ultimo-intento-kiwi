@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { useComprobanteStore, useAuthStore } from '@/stores';
 import { MainLayout } from '@/components/common/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,6 +26,7 @@ import {
 } from '@/components/ui/table';
 import { DollarSign, FileText, CheckCircle, CreditCard, Banknote } from 'lucide-react';
 import type { TipoComprobante, TipoPago, TipoBilleteraVirtual } from '@/types';
+import { toast } from 'sonner';
 
 export const CajeroDashboard: React.FC = () => {
   const { user } = useAuthStore();
@@ -44,6 +46,14 @@ export const CajeroDashboard: React.FC = () => {
     fetchComprobantes();
   }, []);
 
+  const getErrorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof AxiosError) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message;
+      return backendMessage || fallback;
+    }
+    return fallback;
+  };
+
   const comprobantesAbiertos = comprobantes.filter(c => c.estado === 'ABIERTO');
 
   const handleVerComprobante = async (comprobanteId: number) => {
@@ -59,15 +69,24 @@ export const CajeroDashboard: React.FC = () => {
     if (!comprobante) return;
 
     try {
-      const tiposPago: TipoPago[] = [tipoPago];
-      const montos: number[] = [comprobante.total];
+      const tipoPagoId = [tipoPago === 'EFECTIVO' ? 1 : 2];
+      const montoEfectivo = parseFloat(montoRecibido || '0');
+
+      if (tipoPago === 'EFECTIVO') {
+        if (!montoRecibido || Number.isNaN(montoEfectivo) || montoEfectivo <= 0) {
+          toast.error('Debes ingresar un monto recibido válido para efectivo.');
+          return;
+        }
+      }
+
+      const montos: number[] = [tipoPago === 'EFECTIVO' ? montoEfectivo : comprobante.total];
 
       const mensaje = await registrarVenta({
         usuarioId: user?.usuarioId || 0,
         comprobanteId: selectedComprobante,
-        tiposPago,
+        tipoPagoId,
         montos,
-        billetera: tipoPago === 'BILLETERA VIRTUAL' ? billetera : undefined,
+        tipoBilleteraVirtualId: tipoPago === 'BILLETERA VIRTUAL' ? (billetera === 'YAPE' ? 1 : 2) : undefined,
         tipoComprobante,
         dni: tipoComprobante === 'BOLETA' ? documento : undefined,
         ruc: tipoComprobante === 'FACTURA' ? documento : undefined,
@@ -76,6 +95,7 @@ export const CajeroDashboard: React.FC = () => {
 
       setMensajePago(mensaje);
       setPagoExitoso(true);
+      toast.success(mensaje || 'Pago registrado correctamente.');
       
       setTimeout(() => {
         setIsPagoDialogOpen(false);
@@ -86,7 +106,7 @@ export const CajeroDashboard: React.FC = () => {
         setMontoRecibido('');
       }, 3000);
     } catch (error) {
-      console.error('Error registrando venta:', error);
+      toast.error(getErrorMessage(error, 'No se pudo registrar la venta.'));
     }
   };
 

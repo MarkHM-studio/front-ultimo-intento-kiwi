@@ -1,4 +1,5 @@
 import api from './api';
+import axios from 'axios';
 import type { 
   ComprobanteRequest, 
   ComprobanteResponse,
@@ -53,8 +54,18 @@ export const comprobanteService = {
 
   // Get pedidos by comprobante
   getPedidosByComprobante: async (comprobanteId: number): Promise<PedidoDetalleResponse[]> => {
-    const response = await api.get<PedidoDetalleResponse[]>(`/pedido/comprobante/${comprobanteId}/detalle`);
-    return response.data;
+    try {
+      const response = await api.get<PedidoDetalleResponse[]>(`/pedido/comprobante/${comprobanteId}/detalle`);
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const backendMessage = (error.response?.data as { message?: string } | undefined)?.message;
+        if (error.response?.status === 409 && backendMessage === 'No hay pedidos para este comprobante') {
+          return [];
+        }
+      }
+      throw error;
+    }
   },
 
   // Get mesas ocupadas

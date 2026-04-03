@@ -40,6 +40,11 @@ export const pedidoService = {
     return response.data;
   },
 
+  // Delete pedido
+  delete: async (id: number): Promise<void> => {
+    await api.delete(`/pedido/${id}`);
+  },
+
   // Marcar pedido como preparando
   marcarPreparando: async (id: number): Promise<string> => {
     const response = await api.put<string>(`/pedido/${id}/preparando`);
