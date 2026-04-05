@@ -51,7 +51,10 @@ export const adminService = {
   // ============ INSUMOS ============
   getInsumos: async (): Promise<InsumoResponse[]> => {
     const response = await api.get<InsumoResponse[]>('/insumo');
-    return response.data;
+    return response.data.map((item: any) => ({
+      ...item,
+      categoriaId: item.categoriaId ?? item.categoria?.id,
+    }));
   },
 
   getInsumoById: async (id: number): Promise<InsumoResponse> => {

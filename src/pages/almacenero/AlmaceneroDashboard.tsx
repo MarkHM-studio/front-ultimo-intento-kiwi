@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AxiosError } from 'axios';
 import { useAlmacenStore, useAuthStore } from '@/stores';
 import { MainLayout } from '@/components/common/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Plus, Package, Warehouse, TrendingUp, ArrowDownLeft } from 'lucide-react';
 import type { EntradaRequest } from '@/types';
+import { toast } from 'sonner';
 
 export const AlmaceneroDashboard: React.FC = () => {
   const { user } = useAuthStore();
@@ -60,10 +62,31 @@ export const AlmaceneroDashboard: React.FC = () => {
     fetchProveedores();
   }, []);
 
+   const getErrorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof AxiosError) {
+      const backendMessage = (error.response?.data as { message?: string } | undefined)?.message;
+      return backendMessage || fallback;
+    }
+    return fallback;
+  };
+
+  const handleChangeTipoEntrada = (tipo: 'producto' | 'insumo') => {
+    setTipoEntrada(tipo);
+    setFormData((prev) => ({
+      ...prev,
+      productoId: undefined,
+      insumoId: undefined,
+      unidadMedida: tipo === 'producto' ? 'UDS' : '',
+    }));
+  };
+
+
    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     if (!formData.proveedorId) return setFormError('Selecciona un proveedor.');
+    if (tipoEntrada === 'insumo' && !formData.insumoId) return setFormError('Selecciona un insumo.');
+    if (tipoEntrada === 'producto' && !formData.productoId) return setFormError('Selecciona un producto.');
     if (!formData.unidadMedida.trim()) return setFormError('La unidad de medida es obligatoria.');
     if (formData.cantidadTotal <= 0 || formData.costoUnitario <= 0) {
       return setFormError('Cantidad y costo unitario deben ser mayores a 0.');
@@ -75,15 +98,18 @@ export const AlmaceneroDashboard: React.FC = () => {
       });
       setIsDialogOpen(false);
       resetForm();
+      toast.success('Entrada registrada correctamente.');
     } catch (error) {
-      console.error('Error creating entrada:', error);
+      const message = getErrorMessage(error, 'No se pudo registrar la entrada.');
+      setFormError(message);
+      toast.error(message);
     }
   };
 
   const resetForm = () => {
     setFormData({
       cantidadTotal: 0,
-      unidadMedida: '',
+      unidadMedida: tipoEntrada === 'producto' ? 'UDS' : '',
       costoUnitario: 0,
       productoId: undefined,
       insumoId: undefined,
@@ -121,7 +147,7 @@ export const AlmaceneroDashboard: React.FC = () => {
               <DialogHeader>
                 <DialogTitle>Registrar Entrada</DialogTitle>
                 <DialogDescription>
-                  Registra una nueva entrada de producto o insumo
+                 Registra una nueva entrada de producto o insumo
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleSubmit}>
@@ -134,7 +160,7 @@ export const AlmaceneroDashboard: React.FC = () => {
                         type="button"
                         variant={tipoEntrada === 'insumo' ? 'default' : 'outline'}
                         className={tipoEntrada === 'insumo' ? 'bg-amber-600' : ''}
-                        onClick={() => setTipoEntrada('insumo')}
+                        onClick={() => handleChangeTipoEntrada('insumo')}
                       >
                         Insumo
                       </Button>
@@ -142,7 +168,7 @@ export const AlmaceneroDashboard: React.FC = () => {
                         type="button"
                         variant={tipoEntrada === 'producto' ? 'default' : 'outline'}
                         className={tipoEntrada === 'producto' ? 'bg-amber-600' : ''}
-                        onClick={() => setTipoEntrada('producto')}
+                        onClick={() => handleChangeTipoEntrada('producto')}
                       >
                         Producto
                       </Button>
@@ -154,7 +180,15 @@ export const AlmaceneroDashboard: React.FC = () => {
                       <Label>Insumo</Label>
                       <Select 
                         value={formData.insumoId?.toString() || ''} 
-                        onValueChange={(value) => setFormData({ ...formData, insumoId: parseInt(value), productoId: undefined })}
+                        onValueChange={(value) => {
+                          const selectedInsumo = insumos.find((i) => i.id === parseInt(value));
+                          setFormData({
+                            ...formData,
+                            insumoId: parseInt(value),
+                            productoId: undefined,
+                            unidadMedida: selectedInsumo?.unidadMedida || ''
+                          });
+                        }}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un insumo" />
@@ -173,7 +207,7 @@ export const AlmaceneroDashboard: React.FC = () => {
                       <Label>Producto</Label>
                       <Select 
                         value={formData.productoId?.toString() || ''} 
-                        onValueChange={(value) => setFormData({ ...formData, productoId: parseInt(value), insumoId: undefined })}
+                        onValueChange={(value) => setFormData({ ...formData, productoId: parseInt(value), insumoId: undefined, unidadMedida: 'UDS' })}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecciona un producto" />
@@ -221,10 +255,10 @@ export const AlmaceneroDashboard: React.FC = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Unidad de Medida</Label>
+                       <Label>Unidad de Medida</Label>
                       <Input
                         value={formData.unidadMedida}
-                        onChange={(e) => setFormData({ ...formData, unidadMedida: e.target.value })}
+                        disabled
                         placeholder="KG, L, UDS..."
                         required
                       />

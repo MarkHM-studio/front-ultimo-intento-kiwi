@@ -8,6 +8,7 @@ import { AdminCrudLayout } from './components/AdminCrudLayout';
 import { RowActions } from './components/RowActions';
 import { useTablePagination } from '@/hooks/useTablePagination';
 import { TablePagination } from './components/TablePagination';
+import { getCategoryClass } from './components/categoryUtils';
 
 export const Categorias: React.FC = () => {
   const { categorias, fetchCategorias, createCategoria, updateCategoria } = useAdminStore();
@@ -69,7 +70,9 @@ export const Categorias: React.FC = () => {
             <tbody>
               {paginatedData.map((category) => (
                 <tr key={category.id} className="even:bg-slate-50/30">
-                  <td className="px-4 py-3 font-medium">{category.nombre}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getCategoryClass(category.id, category.nombre)}`}>{category.nombre}</span>
+                  </td>
                   <td className="px-4 py-3">{formatDate(category.fechaHoraRegistro)}</td>
                   <td className="px-4 py-3">{formatDate(category.fechaHoraActualizacion || category.fechaHoraRegistro)}</td>
                   <td className="px-4 py-3 text-right">

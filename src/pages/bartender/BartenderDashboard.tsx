@@ -8,7 +8,7 @@ import { Wine, Clock, CheckCircle, AlertCircle, GlassWater } from 'lucide-react'
 
 export const BartenderDashboard: React.FC = () => {
   const { pedidos, fetchPedidos, marcarPreparando, marcarListo, isLoading } = usePedidoStore();
-  const [activeTab, setActiveTab] = useState<'pendientes' | 'preparando' | 'todos'>('pendientes');
+  const [activeTab, setActiveTab] = useState<'pendientes' | 'preparando' | 'listo' | 'todos'>('pendientes');
 
   useEffect(() => {
     fetchPedidos();
@@ -21,10 +21,18 @@ export const BartenderDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const pedidosBar = pedidos;
+  const isPedidoBar = (pedido: any) => {
+    const category = pedido.producto?.categoria;
+    if (!category) return false;
+    const name = (category.nombre || '').trim().toUpperCase();
+    return [2, 3, 4].includes(category.id) || name.startsWith('BEBIDA');
+  };
 
-  const pedidosPendientesBar = pedidosBar.filter(p => p.estado === 'PENDIENTE');
+  const pedidosBar = pedidos.filter(isPedidoBar);
+
+  const pedidosPendientesBar = pedidosBar.filter(p => p.estado === 'PENDIENTE' || p.estado === 'MODIFICADO');
   const pedidosPreparandoBar = pedidosBar.filter(p => p.estado === 'PREPARANDO');
+  const pedidosListosBar = pedidosBar.filter(p => p.estado === 'LISTO');
 
   const handleMarcarPreparando = async (pedidoId: number) => {
     try {
@@ -46,6 +54,7 @@ export const BartenderDashboard: React.FC = () => {
     switch (activeTab) {
       case 'pendientes': return pedidosPendientesBar;
       case 'preparando': return pedidosPreparandoBar;
+      case 'listo': return pedidosListosBar;
       case 'todos': return pedidosBar;
       default: return pedidosPendientesBar;
     }
@@ -54,6 +63,7 @@ export const BartenderDashboard: React.FC = () => {
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
       case 'PENDIENTE': return <Badge variant="outline" className="text-gray-500 border-gray-300">Pendiente</Badge>;
+      case 'MODIFICADO': return <Badge variant="outline" className="text-orange-600 border-orange-300">Modificado</Badge>;
       case 'PREPARANDO': return <Badge className="bg-yellow-100 text-yellow-800">Preparando</Badge>;
       case 'LISTO': return <Badge className="bg-green-100 text-green-800">Listo</Badge>;
       default: return <Badge>{estado}</Badge>;
@@ -151,6 +161,13 @@ export const BartenderDashboard: React.FC = () => {
             onClick={() => setActiveTab('preparando')}
           >
             Preparando ({pedidosPreparandoBar.length})
+          </Button>
+          <Button
+            variant={activeTab === 'listo' ? 'default' : 'outline'}
+            className={activeTab === 'listo' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+            onClick={() => setActiveTab('listo')}
+          >
+            Listo ({pedidosListosBar.length})
           </Button>
           <Button
             variant={activeTab === 'todos' ? 'default' : 'outline'}

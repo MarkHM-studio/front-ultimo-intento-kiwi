@@ -8,12 +8,12 @@ import { ChefHat, Clock, CheckCircle, Utensils, AlertCircle } from 'lucide-react
 
 export const CocineroDashboard: React.FC = () => {
   const { pedidos, fetchPedidos, marcarPreparando, marcarListo, isLoading } = usePedidoStore();
-  const [activeTab, setActiveTab] = useState<'pendientes' | 'preparando' | 'todos'>('pendientes');
+  const [activeTab, setActiveTab] = useState<'pendientes' | 'preparando' | 'listo' | 'todos'>('pendientes');
 
   useEffect(() => {
     fetchPedidos();
     
-    // Actualizar cada 10 segundos
+   // Actualizar cada 10 segundos
     const interval = setInterval(() => {
       fetchPedidos();
     }, 10000);
@@ -21,10 +21,18 @@ export const CocineroDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const pedidosCocina = pedidos;
+  const isPedidoCocina = (pedido: any) => {
+    const category = pedido.producto?.categoria;
+    if (!category) return false;
+    const name = (category.nombre || '').trim().toUpperCase();
+    return category.id === 1 || name.startsWith('PLATO') || name.startsWith('COMIDA');
+  };
 
-  const pedidosPendientesCocina = pedidosCocina.filter(p => p.estado === 'PENDIENTE');
+  const pedidosCocina = pedidos.filter(isPedidoCocina);
+
+  const pedidosPendientesCocina = pedidosCocina.filter(p => p.estado === 'PENDIENTE' || p.estado === 'MODIFICADO');
   const pedidosPreparandoCocina = pedidosCocina.filter(p => p.estado === 'PREPARANDO');
+  const pedidosListosCocina = pedidosCocina.filter(p => p.estado === 'LISTO');
 
   const handleMarcarPreparando = async (pedidoId: number) => {
     try {
@@ -42,10 +50,11 @@ export const CocineroDashboard: React.FC = () => {
     }
   };
 
-  const getPedidosToShow = () => {
+   const getPedidosToShow = () => {
     switch (activeTab) {
       case 'pendientes': return pedidosPendientesCocina;
       case 'preparando': return pedidosPreparandoCocina;
+      case 'listo': return pedidosListosCocina;
       case 'todos': return pedidosCocina;
       default: return pedidosPendientesCocina;
     }
@@ -54,6 +63,7 @@ export const CocineroDashboard: React.FC = () => {
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
       case 'PENDIENTE': return <Badge variant="outline" className="text-gray-500 border-gray-300">Pendiente</Badge>;
+      case 'MODIFICADO': return <Badge variant="outline" className="text-orange-600 border-orange-300">Modificado</Badge>;
       case 'PREPARANDO': return <Badge className="bg-yellow-100 text-yellow-800">Preparando</Badge>;
       case 'LISTO': return <Badge className="bg-green-100 text-green-800">Listo</Badge>;
       default: return <Badge>{estado}</Badge>;
@@ -150,7 +160,14 @@ export const CocineroDashboard: React.FC = () => {
             className={activeTab === 'preparando' ? 'bg-amber-600 hover:bg-amber-700' : ''}
             onClick={() => setActiveTab('preparando')}
           >
-            Preparando ({pedidosPreparandoCocina.length})
+           Preparando ({pedidosPreparandoCocina.length})
+          </Button>
+          <Button
+            variant={activeTab === 'listo' ? 'default' : 'outline'}
+            className={activeTab === 'listo' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+            onClick={() => setActiveTab('listo')}
+          >
+            Listo ({pedidosListosCocina.length})
           </Button>
           <Button
             variant={activeTab === 'todos' ? 'default' : 'outline'}

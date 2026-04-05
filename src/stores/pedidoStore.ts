@@ -25,6 +25,7 @@ interface PedidoState {
   deletePedido: (id: number) => Promise<void>;
   marcarPreparando: (id: number) => Promise<void>;
   marcarListo: (id: number) => Promise<void>;
+  marcarEntregado: (id: number) => Promise<void>;
   clearPedidoActual: () => void;
   clearError: () => void;
 }
@@ -115,8 +116,8 @@ export const usePedidoStore = create<PedidoState>((set, get) => ({
       throw error;
     }
   },
-  
-   // Delete pedido
+
+  // Delete pedido
   deletePedido: async (id: number) => {
     set({ isLoading: true, error: null });
     try {
@@ -163,6 +164,22 @@ export const usePedidoStore = create<PedidoState>((set, get) => ({
       set({ 
         error: error.response?.data?.message || 'Error al actualizar pedido',
         isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  // Marcar como entregado
+  marcarEntregado: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      await pedidoService.marcarEntregado(id);
+      await get().fetchPedidos();
+      set({ isLoading: false });
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || 'Error al marcar pedido como entregado',
+        isLoading: false
       });
       throw error;
     }

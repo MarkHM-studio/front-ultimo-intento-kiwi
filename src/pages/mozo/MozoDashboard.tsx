@@ -27,6 +27,7 @@ import type { PedidoRequest, ProductoResponse } from '@/types';
 import { useAuthStore } from '@/stores';
 import { toast } from 'sonner';
 import { adminService } from '@/services/adminService';
+import { comprobanteService } from '@/services/comprobanteService';
 
 export const MozoDashboard: React.FC = () => {
   const { user } = useAuthStore();
@@ -40,7 +41,7 @@ export const MozoDashboard: React.FC = () => {
     mesasOcupadas,
     fetchMesasOcupadas
   } = useComprobanteStore();
-  const { createPedido, updatePedido, deletePedido } = usePedidoStore();
+  const { createPedido, updatePedido, deletePedido, marcarEntregado } = usePedidoStore();
   
   const [isNuevoComprobanteOpen, setIsNuevoComprobanteOpen] = useState(false);
   const [isNuevoPedidoOpen, setIsNuevoPedidoOpen] = useState(false);
@@ -52,6 +53,7 @@ export const MozoDashboard: React.FC = () => {
   const [nombreGrupo, setNombreGrupo] = useState('');
   const [productosDisponibles, setProductosDisponibles] = useState<ProductoResponse[]>([]);
   const [productosDisponiblesError, setProductosDisponiblesError] = useState<string | null>(null);
+  const [listosPorComprobante, setListosPorComprobante] = useState<Record<number, number>>({});
   const [formData, setFormData] = useState<PedidoRequest>({
     cantidad: 1,
     comprobanteId: 0,
@@ -60,10 +62,14 @@ export const MozoDashboard: React.FC = () => {
     usuarioId: user?.usuarioId || 0
   });
 
-  useEffect(() => {
+   useEffect(() => {
     fetchComprobantes();
     fetchMesasOcupadas();
   }, []);
+
+  useEffect(() => {
+    void refreshListosPorComprobante();
+  }, [comprobantes.length]);
 
   const getErrorMessage = (error: unknown, fallback: string) => {
     if (error instanceof AxiosError) {
@@ -89,11 +95,30 @@ export const MozoDashboard: React.FC = () => {
     setIsNuevoPedidoOpen(true);
   };
 
+  const refreshListosPorComprobante = async () => {
+    const abiertos = comprobantes.filter((c) => c.estado === 'ABIERTO');
+    if (abiertos.length === 0) {
+      setListosPorComprobante({});
+      return;
+    }
+
+    const results = await Promise.all(abiertos.map(async (comprobante) => {
+      const pedidos = await comprobanteService.getPedidosByComprobante(comprobante.id);
+      const listos = pedidos.filter((pedido) => pedido.estado === 'LISTO').length;
+      return { comprobanteId: comprobante.id, listos };
+    }));
+
+    setListosPorComprobante(results.reduce<Record<number, number>>((acc, item) => {
+      acc[item.comprobanteId] = item.listos;
+      return acc;
+    }, {}));
+  };
+
   const comprobantesAbiertos = comprobantes.filter(c => c.estado === 'ABIERTO');
 
   const handleCrearComprobante = async () => {
     try {
-      await createComprobante({ sucursalId: 1 }); // Default sucursal
+      await createComprobante({ sucursalId: 1 }); 
       setIsNuevoComprobanteOpen(false);
       toast.success('Comprobante creado correctamente.');
     } catch (error) {
@@ -116,7 +141,7 @@ export const MozoDashboard: React.FC = () => {
         return;
       }
 
-      await createPedido({
+     await createPedido({
         ...formData,
         comprobanteId: selectedComprobante,
         usuarioId: user?.usuarioId || 0
@@ -132,13 +157,14 @@ export const MozoDashboard: React.FC = () => {
       await fetchPedidosByComprobante(selectedComprobante);
       fetchComprobantes();
       await fetchProductosDisponibles();
+      await refreshListosPorComprobante();
       toast.success('Pedido agregado correctamente.');
     } catch (error) {
       toast.error(getErrorMessage(error, 'No se pudo agregar el pedido.'));
     }
   };
 
-  const handleEditarPedido = async (e: React.FormEvent) => {
+ const handleEditarPedido = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingPedido || !selectedComprobante) return;
     
@@ -153,6 +179,7 @@ export const MozoDashboard: React.FC = () => {
       await fetchPedidosByComprobante(selectedComprobante);
       fetchComprobantes();
       await fetchProductosDisponibles();
+      await refreshListosPorComprobante();
       toast.success('Pedido actualizado correctamente.');
     } catch (error) {
       toast.error(getErrorMessage(error, 'No se pudo actualizar el pedido.'));
@@ -191,6 +218,7 @@ export const MozoDashboard: React.FC = () => {
       setNombreGrupo('');
       fetchComprobantes();
       fetchMesasOcupadas();
+      await refreshListosPorComprobante();
       toast.success('Mesas asignadas correctamente al comprobante.');
     } catch (error) {
       toast.error(getErrorMessage(error, 'No se pudieron asignar las mesas al comprobante.'));
@@ -207,15 +235,32 @@ export const MozoDashboard: React.FC = () => {
       await fetchPedidosByComprobante(selectedComprobante);
       fetchComprobantes();
       await fetchProductosDisponibles();
+      await refreshListosPorComprobante();
       toast.success('Pedido eliminado correctamente.');
     } catch (error) {
       toast.error(getErrorMessage(error, 'No se pudo eliminar el pedido.'));
     }
   };
 
+  const handleMarcarEntregado = async (pedidoId: number) => {
+    if (!selectedComprobante) return;
+    try {
+      await marcarEntregado(pedidoId);
+      await fetchPedidosByComprobante(selectedComprobante);
+      await refreshListosPorComprobante();
+      toast.success('Pedido marcado como entregado.');
+    } catch (error) {
+      toast.error(getErrorMessage(error, 'No se pudo marcar el pedido como entregado.'));
+    }
+  };
+
   const toggleMesa = (id: number) => {
     setMesasSeleccionadas(prev => prev.includes(id) ? prev.filter(m => m !== id) : [...prev, id]);
   };
+
+  const mesasOcupadasUnicas = mesasOcupadas.filter((mesa, index, arr) =>
+    index === arr.findIndex((m) => `${m.mesaId}-${m.nombre || m.mesaNombre || ''}` === `${mesa.mesaId}-${mesa.nombre || mesa.mesaNombre || ''}`)
+  );
 
   const getEstadoBadge = (estado: string) => {
     switch (estado) {
@@ -265,7 +310,7 @@ export const MozoDashboard: React.FC = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Mesas Ocupadas</p>
-                  <p className="text-2xl font-bold text-gray-900">{mesasOcupadas.length}</p>
+                  <p className="text-2xl font-bold text-gray-900">{mesasOcupadasUnicas.length}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                   <TableIcon className="h-6 w-6 text-blue-600" />
@@ -313,7 +358,7 @@ export const MozoDashboard: React.FC = () => {
                           ? 'border-amber-500 bg-amber-50' 
                           : 'hover:bg-gray-50'
                       }`}
-                      onClick={() => handleVerComprobante(comprobante.id)}
+                       onClick={() => handleVerComprobante(comprobante.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div>
@@ -324,7 +369,14 @@ export const MozoDashboard: React.FC = () => {
                         </div>
                         <div className="text-right">
                           <p className="font-bold text-lg">S/ {(comprobante.total || 0).toFixed(2)}</p>
-                          <Badge variant="outline">{comprobante.estado}</Badge>
+                          <div className="flex items-center justify-end gap-2">
+                            <Badge variant="outline">{comprobante.estado}</Badge>
+                            {(listosPorComprobante[comprobante.id] || 0) > 0 && (
+                              <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-red-600 px-2 text-xs font-semibold text-white">
+                                {listosPorComprobante[comprobante.id]}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -383,24 +435,35 @@ export const MozoDashboard: React.FC = () => {
                         <div className="text-right">
                           <p className="font-medium">x{pedido.cantidad}</p>
                           <p className="text-sm text-gray-500">S/ {pedido.subtotal.toFixed(2)}</p>
-                          <div className="flex gap-1 mt-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7"
-                              onClick={() => openEditPedido(pedido)}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
+                          {(pedido.estado === 'PENDIENTE' || pedido.estado === 'MODIFICADO') && (
+                            <div className="flex gap-1 mt-1">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7"
+                                onClick={() => openEditPedido(pedido)}
+                              >
+                                <Edit className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-red-600 hover:text-red-700"
+                                onClick={() => handleEliminarPedido(pedido.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          )}
+                          {pedido.estado === 'LISTO' && (
                             <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-red-600 hover:text-red-700"
-                              onClick={() => handleEliminarPedido(pedido.id)}
+                              size="sm"
+                              className="mt-2 bg-green-600 hover:bg-green-700"
+                              onClick={() => handleMarcarEntregado(pedido.id)}
                             >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>   
-                          </div>
+                              Marcar como entregado
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -431,7 +494,7 @@ export const MozoDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Dialog Nuevo Pedido */}
+         {/* Dialog Nuevo Pedido */}
         <Dialog open={isNuevoPedidoOpen} onOpenChange={setIsNuevoPedidoOpen}>
           <DialogContent>
             <DialogHeader>
@@ -511,8 +574,8 @@ export const MozoDashboard: React.FC = () => {
             </form>
           </DialogContent>
         </Dialog>
-
-         {/* Dialog Editar Pedido */}
+        
+        {/* Dialog Editar Pedido */}
         <Dialog open={isEditarPedidoOpen} onOpenChange={setIsEditarPedidoOpen}>
           <DialogContent>
             <DialogHeader>
@@ -604,14 +667,14 @@ export const MozoDashboard: React.FC = () => {
               <div className="space-y-2">
                 <Label>Mesas ocupadas actualmente</Label>
                 <div className="text-xs text-gray-500">
-                  {mesasOcupadas.length === 0 ? 'No hay mesas ocupadas.' : mesasOcupadas.map(m => m.nombre || m.mesaNombre || `Mesa ${m.mesaId}`).join(', ')}
+                  {mesasOcupadasUnicas.length === 0 ? 'No hay mesas ocupadas.' : mesasOcupadasUnicas.map(m => m.nombre || m.mesaNombre || `Mesa ${m.mesaId}`).join(', ')}
                 </div>
               </div>
               <div className="space-y-2">
                 <Label>Mesas a asignar</Label>
                 <div className="grid grid-cols-4 gap-2">
                   {Array.from({ length: 20 }, (_, idx) => idx + 1).map((mesaId) => {
-                    const ocupada = mesasOcupadas.some(m => m.mesaId === mesaId);
+                    const ocupada = mesasOcupadasUnicas.some(m => m.mesaId === mesaId);
                     return (
                       <button
                         key={mesaId}

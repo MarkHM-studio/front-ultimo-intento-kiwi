@@ -8,7 +8,7 @@ export type EstadoUsuario = 'ACTIVO' | 'INACTIVO';
 
 export type EstadoComprobante = 'ABIERTO' | 'PAGADO' | 'CANCELADO';
 
-export type EstadoPedido = 'PENDIENTE' | 'PREPARANDO' | 'LISTO' | 'PAGADO';
+export type EstadoPedido = 'PENDIENTE' | 'MODIFICADO' | 'PREPARANDO' | 'LISTO' | 'PAGADO';
 
 export type EstadoReserva = 'ESPERANDO PAGO' | 'PAGADO' | 'CANCELADO' | 'EXPIRADO';
 
@@ -146,6 +146,7 @@ export interface Insumo {
   fechaHoraRegistro: string;
   fechaHoraActualizacion: string;
   marca?: Marca;
+  categoria?: Categoria;
 }
 
 export interface Receta {
@@ -580,6 +581,7 @@ export interface InsumoRequest {
   stock: number;
   unidadMedida: string;
   marcaId?: number;
+  categoriaId?: number;
 }
 
 export interface InsumoResponse {
@@ -589,9 +591,11 @@ export interface InsumoResponse {
   stock: number;
   unidadMedida: string;
   marcaId?: number;
+  categoriaId?: number;
   fechaHoraRegistro?: string;
   fechaHoraActualizacion?: string;
   marca?: Marca;
+  categoria?: Categoria;
 }
 
 // ============================================

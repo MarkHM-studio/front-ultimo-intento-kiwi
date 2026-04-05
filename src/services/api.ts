@@ -7,7 +7,7 @@ const API_ROOT_URL =
   (API_BASE_URL.endsWith('/api') ? API_BASE_URL.slice(0, -4) : API_BASE_URL);
 
 const getStoredToken = (): string | null => {
-  const token = localStorage.getItem('auth-storage');
+  const token = sessionStorage.getItem('auth-storage');
   if (!token) return null;
 
   try {
@@ -77,7 +77,7 @@ instance.interceptors.response.use(
       const isAuthEndpoint = /\/auth\/(login|register|forgot-password|verify-reset-token|reset-password)$/.test(path);
 
       if (error.response?.status === 401 && !isAuthEndpoint) {
-        localStorage.removeItem('auth-storage');
+        sessionStorage.removeItem('auth-storage');
       }
 
       const friendlyMessage = getFriendlyApiMessage(error);

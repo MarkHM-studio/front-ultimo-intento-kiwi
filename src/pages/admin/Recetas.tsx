@@ -9,6 +9,7 @@ import { RowActions } from './components/RowActions';
 import type { RecetaRequest } from '@/types';
 import { useTablePagination } from '@/hooks/useTablePagination';
 import { TablePagination } from './components/TablePagination';
+import { getProductType, getProductTypeClass } from './components/categoryUtils';
 
 interface RecetaDetalle {
   insumoId: number;
@@ -56,9 +57,10 @@ export const Recetas: React.FC = () => {
     return Array.from(map.entries()).map(([key, value]) => ({
       productoId: key,
       productoNombre: value.productoNombre,
+      categoria: productos.find((product) => product.id === key)?.categoria,
       detalles: value.detalles,
     }));
-  }, [normalized]);
+  }, [normalized, productos]);
 
   const filtered = useMemo(() => grouped.filter((recipeGroup) => {
     const text = `${recipeGroup.productoNombre} ${recipeGroup.detalles.map((d) => d.insumoNombre).join(' ')}`.toLowerCase();
@@ -115,14 +117,21 @@ export const Recetas: React.FC = () => {
             <thead className="bg-slate-50 text-slate-600">
               <tr>
                 <th className="px-4 py-3 text-left">Producto</th>
+                <th className="px-4 py-3 text-left">Tipo</th>
                 <th className="px-4 py-3 text-left">Detalle receta</th>
                 <th className="px-4 py-3 text-right">Acciones</th>
               </tr>
             </thead>
              <tbody>
-              {paginatedData.map((recipeGroup) => (
+               {paginatedData.map((recipeGroup) => (
                 <tr key={recipeGroup.productoId} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{recipeGroup.productoNombre}</td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const tipo = getProductType(recipeGroup.categoria);
+                      return <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getProductTypeClass(tipo)}`}>{tipo}</span>;
+                    })()}
+                  </td>
                   <td className="px-4 py-3">
                     <ul className="space-y-1">
                       {recipeGroup.detalles.map((detail) => (

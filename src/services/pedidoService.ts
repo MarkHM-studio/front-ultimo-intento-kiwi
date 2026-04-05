@@ -19,8 +19,35 @@ export const pedidoService = {
   // Get all pedidos
   getAll: async (): Promise<PedidoResponse[]> => {
     const response = await api.get<PedidoResponse[]>('/pedido');
-    return response.data.map((p) => pedidoService.normalizePedido(p));
+    const base = response.data.map((p) => pedidoService.normalizePedido(p));
+
+    const enriched = await Promise.all(base.map(async (pedido) => {
+      if (pedido.producto?.nombre && pedido.usuario?.username) {
+        return pedido;
+      }
+
+      try {
+        const detail = await pedidoService.getDetalleById(pedido.id);
+        return pedidoService.normalizePedido({
+          ...pedido,
+          producto: detail.producto,
+          comprobante: detail.comprobante,
+          tipoEntrega: detail.tipoEntregaResponse ?? detail.tipoEntrega,
+          usuario: detail.usuarioResponse ?? detail.usuario,
+        } as PedidoResponse);
+      } catch {
+        return pedido;
+      }
+    }));
+
+    return enriched;
   },
+
+  getDetalleById: async (id: number): Promise<PedidoDetalleResponse> => {
+    const response = await api.get<PedidoDetalleResponse>(`/pedido/${id}/detalle`);
+    return response.data;
+  },
+
 
   // Get pedidos by estado
   getByEstado: async (estado: EstadoPedido): Promise<PedidoResponse[]> => {
@@ -54,6 +81,12 @@ export const pedidoService = {
   // Marcar pedido como listo
   marcarListo: async (id: number): Promise<string> => {
     const response = await api.put<string>(`/pedido/${id}/listo`);
+    return response.data;
+  },
+
+   // Marcar pedido como entregado
+  marcarEntregado: async (id: number): Promise<string> => {
+    const response = await api.put<string>(`/pedido/${id}/entregado`);
     return response.data;
   }
 };

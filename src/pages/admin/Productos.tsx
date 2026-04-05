@@ -9,6 +9,7 @@ import { RowActions } from '@/pages/admin/components/RowActions';
 import type { ProductoRequest } from '@/types';
 import { useTablePagination } from '@/hooks/useTablePagination';
 import { TablePagination } from '@/pages/admin/components/TablePagination';
+import { getProductType, getProductTypeClass } from '@/pages/admin/components/categoryUtils';
 
 const initialForm: ProductoRequest = { nombre: '', precio: 0, stock: 0, categoriaId: 0, marcaId: undefined };
 const PREPARED_CATEGORY_IDS = [1, 2];
@@ -69,6 +70,7 @@ export const Productos: React.FC = () => {
               <tr>
                 <th className="px-4 py-3 text-left">Producto</th>
                 <th className="px-4 py-3 text-left">Categoría</th>
+                <th className="px-4 py-3 text-left">Tipo</th>
                 <th className="px-4 py-3 text-left">Precio</th>
                 <th className="px-4 py-3 text-left">Stock</th>
                 <th className="px-4 py-3 text-right">Acciones</th>
@@ -79,6 +81,12 @@ export const Productos: React.FC = () => {
                 <tr key={product.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{product.nombre}<div className="text-xs text-slate-500">Marca: {product.marca?.nombre || 'Sin marca'}</div></td>
                   <td className="px-4 py-3">{product.categoria?.nombre || '-'}</td>
+                  <td className="px-4 py-3">
+                    {(() => {
+                      const tipo = getProductType(product.categoria);
+                      return <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getProductTypeClass(tipo)}`}>{tipo}</span>;
+                    })()}
+                  </td>
                   <td className="px-4 py-3">S/ {Number(product.precio).toFixed(2)}</td>
                   <td className="px-4 py-3">{product.stock}</td>
                   <td className="px-4 py-3 text-right">
@@ -143,7 +151,7 @@ export const Productos: React.FC = () => {
               }}
             >
               <option value={0}>Selecciona una categoría</option>
-              {categorias.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}
+              {categorias.filter((category) => category.id <= 4).map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}
             </select>
             <select
               className="h-10 rounded-md border border-slate-200 px-3 text-sm"
