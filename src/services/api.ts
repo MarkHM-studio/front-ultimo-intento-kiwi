@@ -55,6 +55,14 @@ const attachAuthInterceptor = (instance: ReturnType<typeof axios.create>) => {
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }
+
+      const base = String(config.baseURL || '');
+      const url = String(config.url || '');
+      const target = `${base}${url}`;
+      if (target.includes('ngrok-free.app') || target.includes('ngrok-free.dev')) {
+        config.headers['ngrok-skip-browser-warning'] = 'true';
+      }
+
       return config;
     },
     (error) => Promise.reject(error)
