@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { RoleRedirect } from '@/components/common/RoleRedirect';
 import { useAuthStore } from '@/stores';
+import { useDataAutoRefresh } from '@/hooks/useDataAutoRefresh';
 
 // Public pages
 import { Welcome } from '@/pages/public/Welcome';
@@ -48,6 +49,8 @@ import { ClienteDashboard } from '@/pages/cliente/ClienteDashboard';
 function App() {
   const { token, user, fetchCurrentUser, logout } = useAuthStore();
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+
+  useDataAutoRefresh(user?.rol, Boolean(token && user));
 
   useEffect(() => {
     const bootstrap = async () => {

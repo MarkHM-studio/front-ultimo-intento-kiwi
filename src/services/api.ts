@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { notifyDataChanged } from '@/lib/dataSync';
 
 // Configuración base de axios
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
@@ -69,7 +70,13 @@ const attachAuthInterceptor = (instance: ReturnType<typeof axios.create>) => {
   );
 
 instance.interceptors.response.use(
-    (response) => response,
+    (response) => {
+      const method = String(response.config?.method || '').toUpperCase();
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        notifyDataChanged();
+      }
+      return response;
+    },
     (error) => {
       const requestUrl = String(error.config?.url || '');
       const normalizedUrl = requestUrl.startsWith('http')
