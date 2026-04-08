@@ -38,13 +38,13 @@ export const AlmaceneroDashboard: React.FC = () => {
     fetchInsumos, 
     fetchProductos,
     fetchProveedores,
-    createEntrada,
-    isLoading 
+    createEntrada
+    
   } = useAlmacenStore();
   
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [tipoEntrada, setTipoEntrada] = useState<'producto' | 'insumo'>('insumo');
-  const [formData, setFormData] = useState<EntradaRequest>({
+   const [formData, setFormData] = useState<EntradaRequest>({
     cantidadTotal: 0,
     unidadMedida: '',
     costoUnitario: 0,
@@ -54,6 +54,17 @@ export const AlmaceneroDashboard: React.FC = () => {
     usuarioId: user?.usuarioId || 0
   });
   const [formError, setFormError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const toCanonicalUnit = (unit: string) => {
+    const normalized = unit.trim().toUpperCase();
+    if (['UNIDADES', 'UNIDAD', 'UDS', 'UD'].includes(normalized)) return 'UDS';
+    if (['G', 'GRAMO', 'GRAMOS'].includes(normalized)) return 'G';
+    if (['KG', 'KILO', 'KILOGRAMO', 'KILOGRAMOS'].includes(normalized)) return 'KG';
+    if (['ML', 'MILILITRO', 'MILILITROS'].includes(normalized)) return 'ML';
+    if (['L', 'LT', 'LITRO', 'LITROS'].includes(normalized)) return 'L';
+    return normalized;
+  };
 
   useEffect(() => {
     fetchEntradas();
@@ -62,9 +73,12 @@ export const AlmaceneroDashboard: React.FC = () => {
     fetchProveedores();
   }, []);
 
-   const getErrorMessage = (error: unknown, fallback: string) => {
+  const getErrorMessage = (error: unknown, fallback: string) => {
     if (error instanceof AxiosError) {
       const backendMessage = (error.response?.data as { message?: string } | undefined)?.message;
+      if (backendMessage?.toLowerCase().includes('receta inválida')) {
+        return `${backendMessage}. Revisa en Admin > Recetas que todas las cantidades sean mayores a 0.`;
+      }
       return backendMessage || fallback;
     }
     return fallback;
@@ -80,7 +94,6 @@ export const AlmaceneroDashboard: React.FC = () => {
     }));
   };
 
-
    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -92,10 +105,19 @@ export const AlmaceneroDashboard: React.FC = () => {
       return setFormError('Cantidad y costo unitario deben ser mayores a 0.');
     }
     try {
-      await createEntrada({
-        ...formData,
-        usuarioId: user?.usuarioId || 0
-      });
+      setIsSubmitting(true);
+      const payload: EntradaRequest = {
+        cantidadTotal: formData.cantidadTotal,
+        unidadMedida: toCanonicalUnit(formData.unidadMedida),
+        costoUnitario: formData.costoUnitario,
+        proveedorId: formData.proveedorId,
+        usuarioId: user?.usuarioId || 0,
+        ...(tipoEntrada === 'producto'
+          ? { productoId: formData.productoId, insumoId: undefined }
+          : { insumoId: formData.insumoId, productoId: undefined }),
+      };
+
+      await createEntrada(payload);
       setIsDialogOpen(false);
       resetForm();
       toast.success('Entrada registrada correctamente.');
@@ -103,6 +125,8 @@ export const AlmaceneroDashboard: React.FC = () => {
       const message = getErrorMessage(error, 'No se pudo registrar la entrada.');
       setFormError(message);
       toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -186,7 +210,7 @@ export const AlmaceneroDashboard: React.FC = () => {
                             ...formData,
                             insumoId: parseInt(value),
                             productoId: undefined,
-                            unidadMedida: selectedInsumo?.unidadMedida || ''
+                            unidadMedida: selectedInsumo?.unidadMedida ? toCanonicalUnit(selectedInsumo.unidadMedida) : ''
                           });
                         }}
                       >
@@ -287,8 +311,8 @@ export const AlmaceneroDashboard: React.FC = () => {
                   <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
                     Cancelar
                   </Button>
-                  <Button type="submit" className="bg-amber-600 hover:bg-amber-700" disabled={isLoading}>
-                    {isLoading ? 'Guardando...' : 'Registrar Entrada'}
+                  <Button type="submit" className="bg-amber-600 hover:bg-amber-700" disabled={isSubmitting}>
+                    {isSubmitting ? 'Guardando...' : 'Registrar Entrada'}
                   </Button>
                 </DialogFooter>
               </form>

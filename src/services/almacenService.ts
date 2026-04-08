@@ -32,7 +32,12 @@ export const almacenService = {
   // Get all insumos
   getInsumos: async (): Promise<InsumoResponse[]> => {
     const response = await api.get<InsumoResponse[]>('/insumo');
-    return response.data;
+    return response.data.map((item: any) => ({
+      ...item,
+      unidadMedida: item.unidadMedida ?? item.unidad_medida,
+      fechaHoraRegistro: item.fechaHoraRegistro ?? item.fechaHora_registro,
+      fechaHoraActualizacion: item.fechaHoraActualizacion ?? item.fechaHora_actualizacion,
+    }));
   },
 
   // Create insumo

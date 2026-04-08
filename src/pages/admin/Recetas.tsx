@@ -10,6 +10,7 @@ import type { RecetaRequest } from '@/types';
 import { useTablePagination } from '@/hooks/useTablePagination';
 import { TablePagination } from './components/TablePagination';
 import { getProductType, getProductTypeClass } from './components/categoryUtils';
+import { toast } from 'sonner';
 
 interface RecetaDetalle {
   insumoId: number;
@@ -54,7 +55,7 @@ export const Recetas: React.FC = () => {
         current.detalles.push(item);
       }
     });
-    return Array.from(map.entries()).map(([key, value]) => ({
+     return Array.from(map.entries()).map(([key, value]) => ({
       productoId: key,
       productoNombre: value.productoNombre,
       categoria: productos.find((product) => product.id === key)?.categoria,
@@ -79,6 +80,17 @@ export const Recetas: React.FC = () => {
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (!productoId) {
+      toast.error('Selecciona un producto para la receta.');
+      return;
+    }
+
+    const hasInvalidDetalle = detalles.some((item) => !item.insumoId || item.cantidad <= 0 || !item.unidadMedida.trim());
+    if (hasInvalidDetalle) {
+      toast.error('Cada detalle debe tener insumo, cantidad mayor a 0 y unidad válida.');
+      return;
+    }
 
     const payload: RecetaRequest = {
       productoId,
@@ -191,8 +203,7 @@ export const Recetas: React.FC = () => {
                   <option value={0}>Insumo</option>
                   {insumos.map((supply) => <option key={supply.id} value={supply.id}>{supply.nombre}</option>)}
                 </select>
-                <Input type="number" step="0.01" placeholder="Cantidad" value={detalle.cantidad} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, cantidad: Number(e.target.value) } : item))} />
-                <Input placeholder="Unidad" value={detalle.unidadMedida} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, unidadMedida: e.target.value.toUpperCase() } : item))} />
+                <Input type="number" min="0.01" step="0.01" placeholder="Cantidad" value={detalle.cantidad} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, cantidad: Number(e.target.value) } : item))} /><Input placeholder="Unidad" value={detalle.unidadMedida} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, unidadMedida: e.target.value.toUpperCase() } : item))} />
                 <Button type="button" variant="outline" disabled={detalles.length === 1} onClick={() => setDetalles((previous) => previous.filter((_, i) => i !== index))}>Quitar</Button>
               </div>
             ))}

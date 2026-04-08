@@ -14,21 +14,25 @@ const refreshByRole = async (role?: RolNombre) => {
   switch (role) {
     case 'ADMINISTRADOR': {
       const admin = useAdminStore.getState();
+      const comprobantes = useComprobanteStore.getState();
       await Promise.allSettled([
         admin.fetchDashboardStats(),
         admin.fetchProductos(),
         admin.fetchInsumos(),
         admin.fetchCategorias(),
         admin.fetchMesas(),
+        comprobantes.fetchComprobantes(),
       ]);
       break;
     }
     case 'ALMACENERO': {
       const almacen = useAlmacenStore.getState();
+      const comprobantes = useComprobanteStore.getState();
       await Promise.allSettled([
         almacen.fetchEntradas(),
         almacen.fetchInsumos(),
         almacen.fetchProductos(),
+        comprobantes.fetchComprobantes(),
       ]);
       break;
     }
