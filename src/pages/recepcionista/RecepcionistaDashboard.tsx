@@ -6,16 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Calendar, CheckCircle, Clock, Users, Search, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { adminService } from '@/services/adminService';
+import type { Cliente, MesaResponse } from '@/types';
 
 export const RecepcionistaDashboard: React.FC = () => {
-  const { reservas, transacciones, fetchReservas, fetchTransacciones, isLoading } = useReservaStore();
+  const { reservas, reservaActual, transacciones, fetchReservas, fetchReservaById, cancelarReserva, verificarReserva, fetchTransacciones, isLoading } = useReservaStore();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterEstado, setFilterEstado] = useState<string>('todos');
+  const [filterEstado, setFilterEstado] = useState<'EXPIRADO' | 'ESPERANDO PAGO' | 'CONFIRMADAS' | 'VERIFICADAS' | 'CANCELADO'>('CONFIRMADAS');
+  const [selectedReservaId, setSelectedReservaId] = useState<number | null>(null);
+  const [mesasCatalogo, setMesasCatalogo] = useState<MesaResponse[]>([]);
+  const [clientesCatalogo, setClientesCatalogo] = useState<Cliente[]>([]);
 
   useEffect(() => {
     fetchReservas();
     fetchTransacciones();
-    
+    adminService.getMesas().then(setMesasCatalogo).catch(() => setMesasCatalogo([]));
+    adminService.getClientes().then(setClientesCatalogo).catch(() => setClientesCatalogo([]));
+
     // Actualizar cada 30 segundos
     const interval = setInterval(() => {
       fetchReservas();
@@ -30,7 +38,13 @@ export const RecepcionistaDashboard: React.FC = () => {
       (r.usuario?.username || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (r.usuarioId || '').toString().includes(searchTerm) ||
       r.id.toString().includes(searchTerm);
-    const matchesEstado = filterEstado === 'todos' || r.estado === filterEstado;
+    const isVerificada = Boolean(r.fechaVerificacionReserva || r.fechaHoraVerificacionReserva);
+    const matchesEstado =
+      (filterEstado === 'EXPIRADO' && r.estado === 'EXPIRADO') ||
+      (filterEstado === 'ESPERANDO PAGO' && r.estado === 'ESPERANDO PAGO') ||
+      (filterEstado === 'CONFIRMADAS' && r.estado === 'PAGADO' && !isVerificada) ||
+      (filterEstado === 'VERIFICADAS' && isVerificada) ||
+      (filterEstado === 'CANCELADO' && r.estado === 'CANCELADO');
     return matchesSearch && matchesEstado;
   });
 
@@ -40,6 +54,7 @@ export const RecepcionistaDashboard: React.FC = () => {
       case 'PAGADO': return <Badge className="bg-green-100 text-green-800">Pagado</Badge>;
       case 'CANCELADO': return <Badge variant="secondary">Cancelado</Badge>;
       case 'EXPIRADO': return <Badge variant="destructive">Expirado</Badge>;
+      case 'NO_SHOW': return <Badge variant="destructive">No Show</Badge>;
       default: return <Badge>{estado}</Badge>;
     }
   };
@@ -48,6 +63,58 @@ export const RecepcionistaDashboard: React.FC = () => {
     const hoy = new Date().toISOString().split('T')[0];
     return r.fechaReserva === hoy;
   });
+
+  const handleVerDetalle = async (id: number) => {
+    setSelectedReservaId(id);
+    await fetchReservaById(id);
+  };
+
+  const handleCancelar = async (id: number) => {
+    try {
+      await cancelarReserva(id);
+      toast.success('Reserva cancelada correctamente.');
+      await fetchReservas();
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'No se pudo cancelar la reserva.');
+    }
+  };
+
+  const handleVerificar = async (id: number) => {
+    try {
+      await verificarReserva(id);
+      toast.success('Reserva verificada correctamente.');
+      await fetchReservas();
+      if (selectedReservaId === id) {
+        await fetchReservaById(id);
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || 'No se pudo verificar la reserva.');
+    }
+  };
+
+  const getFechaHoraReserva = (reserva: any) =>
+    new Date(`${reserva.fechaReserva}T${(reserva.horaReserva || '00:00:00').slice(0, 8)}`);
+
+  const puedeVerificarLlegada = (reserva: any) => {
+    if (reserva.estado !== 'PAGADO') return false;
+    if (reserva.fechaVerificacionReserva || reserva.fechaHoraVerificacionReserva) return false;
+    return new Date() >= getFechaHoraReserva(reserva);
+  };
+
+  const mesasDetalle = (reservaActual?.mesasIds || []).map((mesaId) => {
+    const mesa = mesasCatalogo.find((m) => m.id === mesaId);
+    return mesa ? `${mesa.nombre} (#${mesa.id})` : `Mesa #${mesaId}`;
+  });
+
+  const clienteDetalle =
+    clientesCatalogo.find((cliente) => cliente.usuario?.id === reservaActual?.usuarioId) ||
+    null;
+
+  const formatLocalDate = (isoDate: string) => {
+    const [year, month, day] = isoDate.split('-').map(Number);
+    if (!year || !month || !day) return isoDate;
+    return new Date(year, month - 1, day).toLocaleDateString('es-PE');
+  };
 
   return (
     <MainLayout>
@@ -162,25 +229,39 @@ export const RecepcionistaDashboard: React.FC = () => {
           </div>
           <div className="flex gap-2">
             <Button
-              variant={filterEstado === 'todos' ? 'default' : 'outline'}
-              className={filterEstado === 'todos' ? 'bg-amber-600 hover:bg-amber-700' : ''}
-              onClick={() => setFilterEstado('todos')}
+              variant={filterEstado === 'EXPIRADO' ? 'default' : 'outline'}
+              className={filterEstado === 'EXPIRADO' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+              onClick={() => setFilterEstado('EXPIRADO')}
             >
-              Todos
+              Expiradas
             </Button>
             <Button
               variant={filterEstado === 'ESPERANDO PAGO' ? 'default' : 'outline'}
               className={filterEstado === 'ESPERANDO PAGO' ? 'bg-amber-600 hover:bg-amber-700' : ''}
               onClick={() => setFilterEstado('ESPERANDO PAGO')}
             >
-              Pendientes
+              Esperando Pago
             </Button>
             <Button
-              variant={filterEstado === 'PAGADO' ? 'default' : 'outline'}
-              className={filterEstado === 'PAGADO' ? 'bg-amber-600 hover:bg-amber-700' : ''}
-              onClick={() => setFilterEstado('PAGADO')}
+              variant={filterEstado === 'CONFIRMADAS' ? 'default' : 'outline'}
+              className={filterEstado === 'CONFIRMADAS' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+              onClick={() => setFilterEstado('CONFIRMADAS')}
             >
               Confirmadas
+            </Button>
+            <Button
+              variant={filterEstado === 'VERIFICADAS' ? 'default' : 'outline'}
+              className={filterEstado === 'VERIFICADAS' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+              onClick={() => setFilterEstado('VERIFICADAS')}
+            >
+              Verificadas
+            </Button>
+            <Button
+              variant={filterEstado === 'CANCELADO' ? 'default' : 'outline'}
+              className={filterEstado === 'CANCELADO' ? 'bg-amber-600 hover:bg-amber-700' : ''}
+              onClick={() => setFilterEstado('CANCELADO')}
+            >
+              Canceladas
             </Button>
           </div>
         </div>
@@ -209,7 +290,7 @@ export const RecepcionistaDashboard: React.FC = () => {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Fecha:</span>
                       <span className="font-medium">
-                        {new Date(reserva.fechaReserva).toLocaleDateString()}
+                        {formatLocalDate(reserva.fechaReserva)}
                       </span>
                     </div>
                      <div className="flex items-center justify-between text-sm">
@@ -231,12 +312,56 @@ export const RecepcionistaDashboard: React.FC = () => {
                         </span>
                       </div>
                     )}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleVerDetalle(reserva.id)}>
+                        Ver detalle
+                      </Button>
+                      {(reserva.estado === 'ESPERANDO PAGO' || reserva.estado === 'PAGADO') && (
+                        <Button variant="outline" size="sm" onClick={() => handleCancelar(reserva.id)}>
+                          Cancelar
+                        </Button>
+                      )}
+                      {puedeVerificarLlegada(reserva) && (
+                        <Button size="sm" onClick={() => handleVerificar(reserva.id)}>
+                          Verificar llegada
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             ))
           )}
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Detalle de reserva</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {!reservaActual || !selectedReservaId ? (
+              <p className="text-gray-500 text-sm">Selecciona una reserva para ver su información completa.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                <p><strong>ID:</strong> {reservaActual.id}</p>
+                <p><strong>Estado:</strong> {reservaActual.estado}</p>
+                <p><strong>Usuario:</strong> #{reservaActual.usuarioId ?? '-'}</p>
+                <p><strong>Grupo:</strong> #{reservaActual.grupoId ?? '-'}</p>
+                <p><strong>Mesas:</strong> {(reservaActual.mesasIds || []).join(', ') || '-'}</p>
+                <p className="md:col-span-2"><strong>Mesas (nombres):</strong> {mesasDetalle.length > 0 ? mesasDetalle.join(', ') : '-'}</p>
+                <p><strong>Personas:</strong> {reservaActual.numPersonas}</p>
+                <p><strong>Fecha:</strong> {formatLocalDate(reservaActual.fechaReserva)}</p>
+                <p><strong>Hora:</strong> {reservaActual.horaReserva}</p>
+                <p><strong>Registro:</strong> {reservaActual.fechaRegistro ? new Date(reservaActual.fechaRegistro).toLocaleString() : '-'}</p>
+                <p><strong>Verificación:</strong> {(reservaActual.fechaVerificacionReserva || reservaActual.fechaHoraVerificacionReserva) ? new Date((reservaActual.fechaVerificacionReserva || reservaActual.fechaHoraVerificacionReserva) as string).toLocaleString() : '-'}</p>
+                <p><strong>Usuario verificador:</strong> {reservaActual.usuarioVerificadorId ?? '-'}</p>
+                <p><strong>Cliente:</strong> {clienteDetalle ? `${clienteDetalle.nombre} ${clienteDetalle.apellido}` : '-'}</p>
+                <p><strong>Correo cliente:</strong> {clienteDetalle?.correo || '-'}</p>
+                <p><strong>DNI cliente:</strong> {(clienteDetalle as any)?.dni || 'No disponible'}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

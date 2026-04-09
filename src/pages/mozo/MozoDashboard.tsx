@@ -39,7 +39,8 @@ export const MozoDashboard: React.FC = () => {
     fetchPedidosByComprobante,
     pedidosComprobante,
     mesasOcupadas,
-    fetchMesasOcupadas
+    fetchMesasOcupadas,
+    clearComprobanteActual
   } = useComprobanteStore();
   const { createPedido, updatePedido, deletePedido, marcarEntregado } = usePedidoStore();
   
@@ -54,6 +55,7 @@ export const MozoDashboard: React.FC = () => {
   const [productosDisponibles, setProductosDisponibles] = useState<ProductoResponse[]>([]);
   const [productosDisponiblesError, setProductosDisponiblesError] = useState<string | null>(null);
   const [listosPorComprobante, setListosPorComprobante] = useState<Record<number, number>>({});
+  const [comprobantesVisibles, setComprobantesVisibles] = useState<number[]>([]);
   const [formData, setFormData] = useState<PedidoRequest>({
     cantidad: 1,
     comprobanteId: 0,
@@ -70,6 +72,56 @@ export const MozoDashboard: React.FC = () => {
   useEffect(() => {
     void refreshListosPorComprobante();
   }, [comprobantes.length]);
+
+  useEffect(() => {
+    const resolverVisibilidad = async () => {
+      const abiertos = comprobantes.filter((c) => c.estado === 'ABIERTO');
+      if (abiertos.length === 0) {
+        setComprobantesVisibles([]);
+        return;
+      }
+
+      const detalles = await Promise.all(
+        abiertos.map(async (comprobante) => {
+          try {
+            const detalle = await comprobanteService.getById(comprobante.id);
+            const esComprobanteDeReserva = Boolean((detalle as any).reserva);
+            const reservaVerificada = Boolean(
+              (detalle as any).reserva?.fechaHoraVerificacionReserva ||
+              (detalle as any).reserva?.fechaVerificacionReserva
+            );
+
+            return {
+              id: comprobante.id,
+              visible: !esComprobanteDeReserva || reservaVerificada,
+            };
+          } catch {
+            return { id: comprobante.id, visible: true };
+          }
+        })
+      );
+
+      setComprobantesVisibles(detalles.filter((d) => d.visible).map((d) => d.id));
+    };
+
+    void resolverVisibilidad();
+  }, [comprobantes]);
+
+  useEffect(() => {
+    if (!selectedComprobante) return;
+
+    const selectedSigueAbierto = comprobantes.some(
+      (comprobante) =>
+        comprobante.id === selectedComprobante &&
+        comprobante.estado === 'ABIERTO' &&
+        comprobantesVisibles.includes(comprobante.id)
+    );
+
+    if (!selectedSigueAbierto) {
+      setSelectedComprobante(null);
+      clearComprobanteActual();
+    }
+  }, [comprobantes, selectedComprobante, clearComprobanteActual, comprobantesVisibles]);
 
   const getErrorMessage = (error: unknown, fallback: string) => {
     if (error instanceof AxiosError) {
@@ -114,7 +166,9 @@ export const MozoDashboard: React.FC = () => {
     }, {}));
   };
 
-  const comprobantesAbiertos = comprobantes.filter(c => c.estado === 'ABIERTO');
+  const comprobantesAbiertos = comprobantes.filter(
+    (c) => c.estado === 'ABIERTO' && comprobantesVisibles.includes(c.id)
+  );
 
   const handleCrearComprobante = async () => {
     try {

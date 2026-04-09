@@ -24,6 +24,7 @@ import { Clientes } from '@/pages/admin/Clientes';
 import { Trabajadores } from '@/pages/admin/Trabajadores';
 import { Mesas } from '@/pages/admin/Mesas';
 import { Reportes } from '@/pages/admin/Reportes';
+import { Salidas } from '@/pages/Salidas';
 
 // Mozo pages
 import { MozoDashboard } from '@/pages/mozo/MozoDashboard';
@@ -197,11 +198,19 @@ return (
             </ProtectedRoute>
           }
         />
-         <Route
+        <Route
           path="/admin/reportes"
           element={
             <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
               <Reportes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/salidas"
+          element={
+            <ProtectedRoute allowedRoles={['ADMINISTRADOR']}>
+              <Salidas />
             </ProtectedRoute>
           }
         />
@@ -250,6 +259,14 @@ return (
           element={
             <ProtectedRoute allowedRoles={['CAJERO']}>
               <CajeroDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cajero/salidas"
+          element={
+            <ProtectedRoute allowedRoles={['CAJERO']}>
+              <Salidas />
             </ProtectedRoute>
           }
         />

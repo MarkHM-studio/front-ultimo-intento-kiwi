@@ -27,6 +27,7 @@ import {
 import { DollarSign, FileText, CheckCircle, CreditCard, Banknote } from 'lucide-react';
 import type { TipoComprobante, TipoPago, TipoBilleteraVirtual } from '@/types';
 import { toast } from 'sonner';
+import { comprobanteService } from '@/services/comprobanteService';
 
 export const CajeroDashboard: React.FC = () => {
   const { user } = useAuthStore();
@@ -57,6 +58,19 @@ export const CajeroDashboard: React.FC = () => {
   const comprobantesAbiertos = comprobantes.filter(c => c.estado === 'ABIERTO');
 
   const handleVerComprobante = async (comprobanteId: number) => {
+    const comprobante = comprobantes.find(c => c.id === comprobanteId);
+    if (!comprobante) return;
+    if ((comprobante.total || 0) <= 0) {
+      toast.error('No se puede procesar un comprobante con total 0.');
+      return;
+    }
+
+    const pedidos = await comprobanteService.getPedidosByComprobante(comprobanteId);
+    if (pedidos.length === 0) {
+      toast.error('No se puede registrar venta de un comprobante sin pedidos.');
+      return;
+    }
+
     setSelectedComprobante(comprobanteId);
     await fetchPedidosByComprobante(comprobanteId);
     setIsPagoDialogOpen(true);
@@ -67,6 +81,14 @@ export const CajeroDashboard: React.FC = () => {
     
     const comprobante = comprobantes.find(c => c.id === selectedComprobante);
     if (!comprobante) return;
+    if ((comprobante.total || 0) <= 0) {
+      toast.error('No se puede procesar un comprobante con total 0.');
+      return;
+    }
+    if (pedidosComprobante.length === 0) {
+      toast.error('No se puede registrar venta de un comprobante sin pedidos.');
+      return;
+    }
 
     try {
       const tipoPagoId = [tipoPago === 'EFECTIVO' ? 1 : 2];

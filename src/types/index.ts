@@ -6,11 +6,11 @@ export type RolNombre = 'CLIENTE' | 'MOZO' | 'COCINERO' | 'BARTENDER' | 'CAJERO'
 
 export type EstadoUsuario = 'ACTIVO' | 'INACTIVO';
 
-export type EstadoComprobante = 'ABIERTO' | 'PAGADO' | 'CANCELADO';
+export type EstadoComprobante = 'ABIERTO' | 'PAGADO' | 'CANCELADO' | 'ELIMINADO';
 
 export type EstadoPedido = 'PENDIENTE' | 'MODIFICADO' | 'PREPARANDO' | 'LISTO' | 'PAGADO';
 
-export type EstadoReserva = 'ESPERANDO PAGO' | 'PAGADO' | 'CANCELADO' | 'EXPIRADO';
+export type EstadoReserva = 'ESPERANDO PAGO' | 'PAGADO' | 'CANCELADO' | 'EXPIRADO' | 'NO_SHOW';
 
 export type EstadoMesa = 'OCUPADO' | 'DESOCUPADO';
 
@@ -398,6 +398,92 @@ export interface ComprobanteResponse {
   sucursal?: Sucursal;
 }
 
+export interface SucursalResumenResponse {
+  id: number;
+  nombre: string;
+  direccion: string;
+  ruc: string;
+}
+
+export interface UsuarioResumenResponse {
+  id: number;
+  username: string;
+  rolNombre?: string;
+}
+
+export interface MesaAsignadaResponse {
+  id: number;
+  mesaId: number;
+  mesaNombre: string;
+  mesaEstado: string;
+}
+
+export interface GrupoDetalleResponse {
+  id: number;
+  nombre: string;
+  estado: string;
+  tipoGrupo: number;
+  detalleMesas: MesaAsignadaResponse[];
+}
+
+export interface ClienteResumenResponse {
+  id: number;
+  nombreCompleto: string;
+  correo: string;
+  telefono: string;
+}
+
+export interface ReservaDetalleEnComprobanteResponse {
+  id: number;
+  fechaReserva: string;
+  horaReserva: string;
+  numPersonas: number;
+  estado: string;
+  fechaRegistro: string;
+  fechaHoraVerificacionReserva?: string;
+  cliente?: ClienteResumenResponse | null;
+}
+
+export interface PedidoEnComprobanteResponse {
+  id: number;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  estado: string;
+  productoId?: number | null;
+  productoNombre?: string | null;
+  tipoEntregaId?: number | null;
+  tipoEntregaNombre?: string | null;
+  usuarioId?: number | null;
+  usuarioUsername?: string | null;
+}
+
+export interface MovimientoTipoPagoDetalleResponse {
+  id: number;
+  monto: number;
+  tipoPagoId?: number | null;
+  tipoPagoNombre?: string | null;
+  tipoBilleteraVirtualId?: number | null;
+  tipoBilleteraVirtualNombre?: string | null;
+}
+
+export interface ComprobanteDetalleResponse {
+  id: number;
+  total: number;
+  IGV?: number;
+  igv?: number;
+  subtotal: number;
+  fechaHora_apertura?: string;
+  fechaHora_venta?: string;
+  estado: EstadoComprobante;
+  sucursal?: SucursalResumenResponse | null;
+  cajero?: UsuarioResumenResponse | null;
+  grupo?: GrupoDetalleResponse | null;
+  reserva?: ReservaDetalleEnComprobanteResponse | null;
+  pedidos: PedidoEnComprobanteResponse[];
+  movimientosTipoPago: MovimientoTipoPagoDetalleResponse[];
+}
+
 export interface GrupoResponse {
   id: number;
   nombre: string;
@@ -508,11 +594,48 @@ export interface ReservaResponse {
   ultimaTransaccionId?: number;
   transaccionesIds?: number[];
   fechaRegistro?: string;
+  fechaVerificacionReserva?: string;
   fechaHoraExpiracionPago?: string;
   fechaHoraRegistro?: string;
   fechaHoraActualizacion?: string;
+  fechaHoraVerificacionReserva?: string;
+  usuarioVerificadorId?: number;
   usuario?: Usuario;
   grupo?: Grupo;
+}
+
+export interface MovimientoInsumoListadoResponse {
+  id: number;
+  fechaHora_registro?: string;
+  cantidad: number;
+  unidad_medida: string;
+  insumoId?: number | null;
+  insumoNombre?: string | null;
+  comprobanteId?: number | null;
+}
+
+export interface InsumoDetalleEnMovimientoResponse {
+  id: number;
+  nombre: string;
+  unidad_medida: string;
+  stock: number;
+}
+
+export interface ComprobanteResumenEnMovimientoResponse {
+  id: number;
+  total: number;
+  estado: string;
+  fechaHora_venta?: string;
+}
+
+export interface MovimientoInsumoDetalleResponse {
+  id: number;
+  cantidad: number;
+  unidad_medida: string;
+  fechaHora_registro?: string;
+  fechaHora_actualizacion?: string;
+  insumo?: InsumoDetalleEnMovimientoResponse | null;
+  comprobante?: ComprobanteResumenEnMovimientoResponse | null;
 }
 
 export interface MesasDisponiblesResponse {

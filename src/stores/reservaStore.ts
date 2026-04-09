@@ -28,6 +28,7 @@ interface ReservaState {
   createReserva: (data: ReservaRequest) => Promise<ReservaResponse>;
   updateReserva: (id: number, data: ReservaRequest) => Promise<ReservaResponse>;
   cancelarReserva: (id: number) => Promise<void>;
+  verificarReserva: (id: number) => Promise<ReservaResponse>;
   fetchMesasDisponibles: (fecha: string, hora: string) => Promise<void>;
   crearPreferenciaPago: (data: CrearPreferenciaPagoRequest) => Promise<CrearPreferenciaPagoResponse>;
   fetchTransacciones: () => Promise<void>;
@@ -146,6 +147,26 @@ export const useReservaStore = create<ReservaState>((set) => ({
       set({ 
         error: error.response?.data?.message || 'Error al cancelar reserva',
         isLoading: false 
+      });
+      throw error;
+    }
+  },
+
+  verificarReserva: async (id: number) => {
+    set({ isLoading: true, error: null });
+    try {
+      const reserva = await reservaService.verificar(id);
+      set(state => ({
+        reservas: state.reservas.map(r => (r.id === id ? reserva : r)),
+        reservasUsuario: state.reservasUsuario.map(r => (r.id === id ? reserva : r)),
+        reservaActual: state.reservaActual?.id === id ? reserva : state.reservaActual,
+        isLoading: false,
+      }));
+      return reserva;
+    } catch (error: any) {
+      set({
+        error: error.response?.data?.message || 'Error al verificar reserva',
+        isLoading: false
       });
       throw error;
     }

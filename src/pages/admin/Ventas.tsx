@@ -42,6 +42,7 @@ export const Ventas: React.FC = () => {
               <option value="ABIERTO">Abierto</option>
               <option value="PAGADO">Pagado</option>
               <option value="CANCELADO">Cancelado</option>
+              <option value="ELIMINADO">Eliminado</option>
             </select>
           </div>
         </Card>
@@ -94,9 +95,37 @@ export const Ventas: React.FC = () => {
               <p><strong>ID:</strong> {comprobanteActual.id}</p>
               <p><strong>Estado:</strong> {comprobanteActual.estado}</p>
               <p><strong>Total:</strong> S/ {Number(comprobanteActual.total).toFixed(2)}</p>
-              <p><strong>IGV:</strong> S/ {Number(comprobanteActual.igv).toFixed(2)}</p>
+              <p><strong>IGV:</strong> S/ {Number(comprobanteActual.igv ?? comprobanteActual.IGV ?? 0).toFixed(2)}</p>
+              <p><strong>Subtotal:</strong> S/ {Number((comprobanteActual as any).subtotal ?? 0).toFixed(2)}</p>
+              <p><strong>Sucursal:</strong> {(comprobanteActual as any).sucursal?.nombre || '-'}</p>
+              <p><strong>Cajero:</strong> {(comprobanteActual as any).cajero?.username || '-'}</p>
               <p className="md:col-span-2"><strong>Fecha de apertura:</strong> {formatDate((comprobanteActual as any).fechaHoraApertura || (comprobanteActual as any).fechaHora_apertura)}</p>
               <p className="md:col-span-2"><strong>Fecha de venta:</strong> {formatDate((comprobanteActual as any).fechaHoraVenta || (comprobanteActual as any).fechaHora_venta)}</p>
+              <div className="md:col-span-2">
+                <strong>Pedidos:</strong>
+                {(comprobanteActual as any).pedidos?.length ? (
+                  <ul className="mt-1 list-disc pl-5">
+                    {(comprobanteActual as any).pedidos.map((pedido: any) => (
+                      <li key={pedido.id}>
+                        {pedido.productoNombre || 'Producto'} x{pedido.cantidad} — S/ {Number(pedido.subtotal).toFixed(2)}
+                      </li>
+                    ))}
+                  </ul>
+                ) : <span className="ml-2 text-slate-500">Sin pedidos</span>}
+              </div>
+              <div className="md:col-span-2">
+                <strong>Pagos:</strong>
+                {(comprobanteActual as any).movimientosTipoPago?.length ? (
+                  <ul className="mt-1 list-disc pl-5">
+                    {(comprobanteActual as any).movimientosTipoPago.map((mov: any) => (
+                      <li key={mov.id}>
+                        {mov.tipoPagoNombre || '-'} — S/ {Number(mov.monto).toFixed(2)}
+                        {mov.tipoBilleteraVirtualNombre ? ` (${mov.tipoBilleteraVirtualNombre})` : ''}
+                      </li>
+                    ))}
+                  </ul>
+                ) : <span className="ml-2 text-slate-500">Sin movimientos de pago</span>}
+              </div>
             </div>
           )}
         </Card>

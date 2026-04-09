@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { 
   ComprobanteRequest, 
   ComprobanteResponse,
+  ComprobanteDetalleResponse,
   AsignarMesasRequest,
   RegistrarVentaRequest,
   PedidoDetalleResponse,
@@ -12,7 +13,7 @@ import { comprobanteService } from '@/services/comprobanteService';
 interface ComprobanteState {
   // Estado
   comprobantes: ComprobanteResponse[];
-  comprobanteActual: ComprobanteResponse | null;
+  comprobanteActual: ComprobanteDetalleResponse | null;
   pedidosComprobante: PedidoDetalleResponse[];
   mesasOcupadas: MesasOcupadasResponse[];
   isLoading: boolean;
@@ -74,7 +75,7 @@ export const useComprobanteStore = create<ComprobanteState>((set, get) => ({
       const comprobante = await comprobanteService.create(data);
       set(state => ({ 
         comprobantes: [...state.comprobantes, comprobante],
-        comprobanteActual: comprobante,
+        comprobanteActual: null,
         isLoading: false 
       }));
       return comprobante;
@@ -96,7 +97,7 @@ export const useComprobanteStore = create<ComprobanteState>((set, get) => ({
         comprobantes: state.comprobantes.map(c => 
           c.id === comprobante.id ? comprobante : c
         ),
-        comprobanteActual: comprobante,
+        
         isLoading: false
       }));
       return comprobante;

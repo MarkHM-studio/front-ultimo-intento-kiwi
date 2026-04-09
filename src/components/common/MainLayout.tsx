@@ -59,6 +59,7 @@ const navItems: NavItem[] = [
   { label: 'Marcas', href: '/admin/marcas', icon: <Factory className="h-5 w-5" />, roles: ['ADMINISTRADOR'] },
   { label: 'Proveedores', href: '/admin/proveedores', icon: <Warehouse className="h-5 w-5" />, roles: ['ADMINISTRADOR'] },
   { label: 'Ventas', href: '/admin/ventas', icon: <DollarSign className="h-5 w-5" />, roles: ['ADMINISTRADOR'] },
+  { label: 'Salidas', href: '/admin/salidas', icon: <Warehouse className="h-5 w-5" />, roles: ['ADMINISTRADOR'] },
   { label: 'Reportes', href: '/admin/reportes', icon: <FileSpreadsheet className="h-5 w-5" />, roles: ['ADMINISTRADOR'] },
 
   { label: 'Pedidos', href: '/mozo', icon: <ShoppingCart className="h-5 w-5" />, roles: ['MOZO'] },
@@ -66,6 +67,7 @@ const navItems: NavItem[] = [
   { label: 'Cocina', href: '/cocinero', icon: <ChefHat className="h-5 w-5" />, roles: ['COCINERO'] },
   { label: 'Bar', href: '/bartender', icon: <Wine className="h-5 w-5" />, roles: ['BARTENDER'] },
   { label: 'Caja', href: '/cajero', icon: <DollarSign className="h-5 w-5" />, roles: ['CAJERO'] },
+  { label: 'Salidas', href: '/cajero/salidas', icon: <Warehouse className="h-5 w-5" />, roles: ['CAJERO'] },
   { label: 'Reservas', href: '/recepcionista', icon: <Calendar className="h-5 w-5" />, roles: ['RECEPCIONISTA'] },
   { label: 'Entradas', href: '/almacenero', icon: <Warehouse className="h-5 w-5" />, roles: ['ALMACENERO'] },
   { label: 'Insumos', href: '/almacenero/insumos', icon: <Package className="h-5 w-5" />, roles: ['ALMACENERO'] },

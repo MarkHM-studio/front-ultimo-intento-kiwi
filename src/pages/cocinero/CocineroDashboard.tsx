@@ -215,7 +215,7 @@ export const CocineroDashboard: React.FC = () => {
                       <span className="font-medium">{pedido.usuario?.username || `Mozo #${pedido.usuarioId ?? '-'}`}</span>
                     </div>
                     
-                    {pedido.estado === 'PENDIENTE' && (
+                    {(pedido.estado === 'PENDIENTE' || pedido.estado === 'MODIFICADO') && (
                       <Button 
                         className="w-full bg-yellow-500 hover:bg-yellow-600"
                         onClick={() => handleMarcarPreparando(pedido.id)}

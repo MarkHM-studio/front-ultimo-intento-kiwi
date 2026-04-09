@@ -43,6 +43,12 @@ export const reservaService = {
     await api.patch(`/reserva/${id}/cancelar`);
   },
 
+  // Verificar reserva (recepcionista)
+  verificar: async (id: number): Promise<ReservaResponse> => {
+    const response = await api.patch<ReservaResponse>(`/reserva/${id}/verificar`);
+    return response.data;
+  },
+
   // Get mesas disponibles
   getMesasDisponibles: async (fecha: string, hora: string): Promise<MesasDisponiblesResponse[]> => {
     const response = await api.get<MesasDisponiblesResponse[]>('/reserva/mesas-disponibles', {

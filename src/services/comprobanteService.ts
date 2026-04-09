@@ -3,6 +3,7 @@ import axios from 'axios';
 import type { 
   ComprobanteRequest, 
   ComprobanteResponse,
+  ComprobanteDetalleResponse,
   AsignarMesasRequest,
   RegistrarVentaRequest,
   PedidoDetalleResponse,
@@ -22,6 +23,21 @@ export const comprobanteService = {
     grupoResponse: (item as any).grupoResponse ?? (item as any).grupo ?? undefined,
   }),
 
+  normalizeComprobanteDetalleFields: (item: ComprobanteDetalleResponse): ComprobanteDetalleResponse => ({
+    ...item,
+    IGV: (item as any).IGV ?? (item as any).igv ?? 0,
+    igv: (item as any).igv ?? (item as any).IGV ?? 0,
+    fechaHora_apertura: (item as any).fechaHora_apertura ?? (item as any).fechaHoraApertura,
+    fechaHora_venta: (item as any).fechaHora_venta ?? (item as any).fechaHoraVenta,
+    movimientosTipoPago: ((item as any).movimientosTipoPago ?? []).map((mov: any) => ({
+      ...mov,
+      tipoPagoId: mov.tipoPagoId ?? mov.tipo_pago_id,
+      tipoPagoNombre: mov.tipoPagoNombre ?? mov.tipoPago,
+      tipoBilleteraVirtualId: mov.tipoBilleteraVirtualId ?? mov.tipo_billetera_virtual_id,
+      tipoBilleteraVirtualNombre: mov.tipoBilleteraVirtualNombre ?? mov.tipoBilleteraVirtual,
+    })),
+  }),
+
   // Get all comprobantes
   getAll: async (): Promise<ComprobanteResponse[]> => {
     const response = await api.get<ComprobanteResponse[]>('/comprobante');
@@ -29,9 +45,9 @@ export const comprobanteService = {
   },
 
   // Get comprobante by id
-  getById: async (id: number): Promise<ComprobanteResponse> => {
-    const response = await api.get<ComprobanteResponse>(`/comprobante/${id}`);
-    return comprobanteService.normalizeComprobanteFields(response.data);
+  getById: async (id: number): Promise<ComprobanteDetalleResponse> => {
+    const response = await api.get<ComprobanteDetalleResponse>(`/comprobante/${id}/detalle`);
+    return comprobanteService.normalizeComprobanteDetalleFields(response.data);
   },
 
   // Create comprobante

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -47,7 +48,24 @@ export const ClienteDashboard: React.FC = () => {
   const [mesasSeleccionadas, setMesasSeleccionadas] = useState<number[]>([]);
   const [numPersonas, setNumPersonas] = useState(2);
   const [editReservaId, setEditReservaId] = useState<number | null>(null);
+  const [detalleReserva, setDetalleReserva] = useState<typeof reservasUsuario[number] | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [aceptaTerminos, setAceptaTerminos] = useState(false);
+
+  const toLocalDateInput = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayLocal = toLocalDateInput(new Date());
+  const maxReservaDate = toLocalDateInput(new Date(new Date().setDate(new Date().getDate() + 7)));
+  const formatLocalDate = (isoDate: string) => {
+    const [year, month, day] = isoDate.split('-').map(Number);
+    if (!year || !month || !day) return isoDate;
+    return new Date(year, month - 1, day).toLocaleDateString('es-PE');
+  };
 
   useEffect(() => {
     fetchReservasByUsuario();
@@ -89,6 +107,7 @@ export const ClienteDashboard: React.FC = () => {
           descripcion: `Reserva en La Pituca - ${fecha} ${hora}`,
           monto: 50
         });
+        setAceptaTerminos(false);
         setIsPagoDialogOpen(true);
       }
     } catch (error) {
@@ -113,6 +132,7 @@ export const ClienteDashboard: React.FC = () => {
       case 'PAGADO': return <Badge className="bg-green-100 text-green-800">Confirmada</Badge>;
       case 'CANCELADO': return <Badge variant="secondary">Cancelada</Badge>;
       case 'EXPIRADO': return <Badge variant="destructive">Expirada</Badge>;
+      case 'NO_SHOW': return <Badge variant="destructive">No Show</Badge>;
       default: return <Badge>{estado}</Badge>;
     }
   };
@@ -249,7 +269,7 @@ export const ClienteDashboard: React.FC = () => {
                         Fecha:
                       </span>
                       <span className="font-medium">
-                        {new Date(reserva.fechaReserva).toLocaleDateString()}
+                        {formatLocalDate(reserva.fechaReserva)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-sm">
@@ -266,7 +286,15 @@ export const ClienteDashboard: React.FC = () => {
                       </span>
                       <span className="font-medium">{reserva.numPersonas}</span>
                     </div>
-                    
+
+                    <Button
+                      variant="outline"
+                      className="w-full mt-2"
+                      onClick={() => setDetalleReserva(reserva)}
+                    >
+                      Ver detalle
+                    </Button>
+
                     {reserva.estado === 'ESPERANDO PAGO' && (
                       <div className="mt-4 space-y-2">
                         <Button 
@@ -277,6 +305,7 @@ export const ClienteDashboard: React.FC = () => {
                               descripcion: `Reserva en La Pituca - ${reserva.fechaReserva} ${reserva.horaReserva}`,
                               monto: 50
                             });
+                            setAceptaTerminos(false);
                             setIsPagoDialogOpen(true);
                           }}
                         >
@@ -334,7 +363,8 @@ export const ClienteDashboard: React.FC = () => {
                     type="date"
                     value={fecha}
                     onChange={(e) => setFecha(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
+                    min={todayLocal}
+                    max={maxReservaDate}
                   />
                 </div>
                 <div className="space-y-2">
@@ -440,13 +470,36 @@ export const ClienteDashboard: React.FC = () => {
                 <p className="text-sm text-gray-600 text-center">
                   Serás redirigido a MercadoPago para completar el pago de forma segura.
                 </p>
+                
+                <div className="rounded-lg border bg-slate-50 p-4 text-sm text-slate-700">
+                  <p className="font-semibold mb-2">Términos y condiciones de reserva</p>
+                  <p>
+                    Al continuar con el pago, aceptas las políticas de La Pituca sobre reservas: la llegada debe
+                    realizarse dentro del tiempo de tolerancia operativo de 15 minutos desde la hora reservada.
+                    Si la asistencia no se registra dentro de ese intervalo, la reserva se clasifica como inasistencia
+                    y no corresponde devolución del monto abonado.
+                  </p>
+                  <div className="mt-3 flex items-start gap-2">
+                    <Checkbox
+                      id="acepta-terminos-reserva"
+                      checked={aceptaTerminos}
+                      onCheckedChange={(checked) => setAceptaTerminos(checked === true)}
+                    />
+                    <Label htmlFor="acepta-terminos-reserva" className="leading-5">
+                      He leído y acepto los términos y condiciones de la reserva.
+                    </Label>
+                  </div>
+                </div>
 
                 <div className="space-y-2">
                   <Button 
                     className="w-full bg-blue-600 hover:bg-blue-700"
                     onClick={() => {
-                      window.open(preferenciaPago.initPoint, '_blank');
+                      setIsPagoDialogOpen(false);
+                      clearPreferenciaPago();
+                      window.location.href = preferenciaPago.initPoint;
                     }}
+                    disabled={!aceptaTerminos}
                   >
                     <CreditCard className="mr-2 h-4 w-4" />
                     Pagar con MercadoPago
@@ -469,6 +522,32 @@ export const ClienteDashboard: React.FC = () => {
                 <p className="mt-4 text-gray-600">Cargando opciones de pago...</p>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={Boolean(detalleReserva)} onOpenChange={(open) => !open && setDetalleReserva(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Detalle de reserva</DialogTitle>
+              <DialogDescription>
+                Información de tu reserva seleccionada.
+              </DialogDescription>
+            </DialogHeader>
+            {detalleReserva && (
+              <div className="space-y-2 text-sm">
+                <p><strong>ID:</strong> #{detalleReserva.id}</p>
+                <p><strong>Estado:</strong> {detalleReserva.estado}</p>
+                <p><strong>Fecha:</strong> {formatLocalDate(detalleReserva.fechaReserva)}</p>
+                <p><strong>Hora:</strong> {detalleReserva.horaReserva}</p>
+                <p><strong>Personas:</strong> {detalleReserva.numPersonas}</p>
+                <p><strong>Mesas seleccionadas:</strong> {(detalleReserva.mesasIds || []).join(', ') || 'Sin mesas registradas'}</p>
+                <p><strong>Grupo:</strong> #{detalleReserva.grupoId ?? '-'}</p>
+                <p><strong>Registro:</strong> {(detalleReserva.fechaRegistro || detalleReserva.fechaHoraRegistro) ? new Date((detalleReserva.fechaRegistro || detalleReserva.fechaHoraRegistro) as string).toLocaleString('es-PE') : '-'}</p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDetalleReserva(null)}>Cerrar</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
