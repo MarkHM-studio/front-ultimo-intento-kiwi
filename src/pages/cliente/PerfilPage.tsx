@@ -9,64 +9,133 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { User, Mail, Phone, MapPin, Calendar, Edit2, Save, ArrowLeft } from 'lucide-react';
-import { adminService } from '@/services/adminService';
-import type { Cliente } from '@/types';
+import api from '@/services/api';
+import type { Cliente, Distrito } from '@/types';
 import { toast } from 'sonner';
+
+type PerfilFormData = {
+  nombre: string;
+  apellido: string;
+  correo: string;
+  fechaNacimiento: string;
+  telefono: string;
+  distrito: string;
+};
+
+const emptyForm: PerfilFormData = {
+  nombre: '',
+  apellido: '',
+  correo: '',
+  fechaNacimiento: '',
+  telefono: '',
+  distrito: '',
+};
+
+const getApiErrorMessage = (error: any): string => {
+  const message = error?.response?.data?.message || error?.friendlyMessage;
+  if (typeof message === 'string' && message.trim()) return message;
+  return 'No pudimos completar la solicitud. Inténtalo nuevamente.';
+};
 
 export const PerfilPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+
   const [isEditing, setIsEditing] = useState(false);
-  const [cliente, setCliente] = useState<Cliente | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ telefono: '', correo: '' });
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [cliente, setCliente] = useState<Cliente | null>(null);
+  const [distritos, setDistritos] = useState<Distrito[]>([]);
+  const [formData, setFormData] = useState<PerfilFormData>(emptyForm);
+
+  const provider = user?.provider || user?.proveedor;
+  const isGoogleUser = provider === 'GOOGLE';
 
   const initials = useMemo(() => {
     const full = user?.nombreCompleto || user?.correo || 'CL';
     return full.slice(0, 2).toUpperCase();
   }, [user]);
 
-  const loadCliente = async () => {
-    if (!user) return;
+  const isFieldEditable = (field: keyof PerfilFormData) => {
+    if (!isEditing) return false;
+    if (isGoogleUser) return true;
+    return field === 'telefono' || field === 'distrito';
+  };
+
+  const loadPerfil = async () => {
+    if (!user?.clienteId) return;
+
+    setIsLoading(true);
     try {
-      const clientes = await adminService.getClientes();
-      const current = clientes.find((item) => item.usuario?.id === user.usuarioId) || null;
-      setCliente(current);
-      if (current) {
-        setFormData({ telefono: current.telefono || '', correo: current.correo || '' });
-      }
-    } catch {
-      toast.error('No se pudo cargar la información del perfil.');
+      const [clienteResponse, distritoResponse] = await Promise.all([
+        api.get<Cliente>(`/cliente/${user.clienteId}`),
+        api.get<Distrito[]>('/distrito'),
+      ]);
+
+      const clienteData = clienteResponse.data;
+      setCliente(clienteData);
+      setDistritos(distritoResponse.data);
+
+      setFormData({
+        nombre: clienteData.nombre || '',
+        apellido: clienteData.apellido || '',
+        correo: clienteData.correo || user.correo || '',
+        fechaNacimiento: clienteData.fechaNacimiento || '',
+        telefono: clienteData.telefono || '',
+        distrito: clienteData.distrito?.nombre || '',
+      });
+    } catch (error: any) {
+      toast.error(`No se pudo cargar tu perfil. ${getApiErrorMessage(error)}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadCliente();
-  }, [user]);
+    loadPerfil();
+  }, [user?.clienteId]);
 
   if (!user) return null;
 
+  const handleCancel = () => {
+    if (cliente) {
+      setFormData({
+        nombre: cliente.nombre || '',
+        apellido: cliente.apellido || '',
+        correo: cliente.correo || user.correo || '',
+        fechaNacimiento: cliente.fechaNacimiento || '',
+        telefono: cliente.telefono || '',
+        distrito: cliente.distrito?.nombre || '',
+      });
+    }
+    setIsEditing(false);
+  };
+
   const handleSave = async () => {
     if (!cliente) return;
-    setIsLoading(true);
+
+    setIsSaving(true);
     try {
-      await adminService.updateCliente(cliente.id, {
-        nombre: cliente.nombre,
-        apellido: cliente.apellido,
-        fechaNacimiento: cliente.fechaNacimiento,
-        telefono: formData.telefono,
-        correo: formData.correo,
-        distritoId: cliente.distrito?.id || 1,
-        usuarioId: cliente.usuario.id,
-        distrito: cliente.distrito?.nombre || '',
-      } as any);
+      const distritoName = formData.distrito.trim();
+      const payload = {
+        nombre: formData.nombre.trim(),
+        apellido: formData.apellido.trim(),
+        fechaNacimiento: formData.fechaNacimiento || null,
+        telefono: formData.telefono.trim(),
+        correo: formData.correo.trim().toLowerCase(),
+        usuarioId: cliente.usuario?.id,
+        distrito: distritoName,
+      };
+
+      await api.put(`/cliente/${cliente.id}`, payload);
       toast.success('Perfil actualizado correctamente.');
       setIsEditing(false);
-      await loadCliente();
+      await loadPerfil();
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || 'No se pudo actualizar el perfil.');
+      toast.error(`No se pudo actualizar tu perfil. ${getApiErrorMessage(error)}`);
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
 
@@ -84,56 +153,98 @@ export const PerfilPage: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-5">
               <div className="flex flex-col items-center gap-3">
-                <Avatar className="h-24 w-24"><AvatarFallback className="bg-[#8B4513] text-2xl text-white">{initials}</AvatarFallback></Avatar>
+                <Avatar className="h-24 w-24">
+                  <AvatarFallback className="bg-[#8B4513] text-2xl text-white">{initials}</AvatarFallback>
+                </Avatar>
                 <p className="text-xl font-semibold">{cliente ? `${cliente.nombre} ${cliente.apellido}` : (user.nombreCompleto || 'Cliente')}</p>
-                <Badge className="bg-[#8B4513]/10 text-[#8B4513]">{user.rol}</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge className="bg-[#8B4513]/10 text-[#8B4513]">{user.rol}</Badge>
+                  <Badge variant="outline">{isGoogleUser ? 'Google' : 'Local'}</Badge>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><User className="h-4 w-4" />Nombre</Label>
-                  <Input value={cliente?.nombre || ''} disabled className="bg-gray-50" />
+                  <Input
+                    value={formData.nombre}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, nombre: e.target.value }))}
+                    disabled={!isFieldEditable('nombre')}
+                    className={!isFieldEditable('nombre') ? 'bg-gray-50' : ''}
+                  />
                 </div>
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><User className="h-4 w-4" />Apellido</Label>
-                  <Input value={cliente?.apellido || ''} disabled className="bg-gray-50" />
+                  <Input
+                    value={formData.apellido}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, apellido: e.target.value }))}
+                    disabled={!isFieldEditable('apellido')}
+                    className={!isFieldEditable('apellido') ? 'bg-gray-50' : ''}
+                  />
                 </div>
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><Mail className="h-4 w-4" />Correo</Label>
-                  {isEditing ? (
-                    <Input value={formData.correo} onChange={(e) => setFormData({ ...formData, correo: e.target.value })} />
-                  ) : (
-                    <Input value={cliente?.correo || user.correo} disabled className="bg-gray-50" />
-                  )}
+                  <Input
+                    value={formData.correo}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, correo: e.target.value }))}
+                    disabled={!isFieldEditable('correo')}
+                    className={!isFieldEditable('correo') ? 'bg-gray-50' : ''}
+                  />
                 </div>
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><Calendar className="h-4 w-4" />Fecha de Nacimiento</Label>
-                  <Input value={cliente?.fechaNacimiento || '-'} disabled className="bg-gray-50" />
+                  <Input
+                    type="date"
+                    value={formData.fechaNacimiento || ''}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, fechaNacimiento: e.target.value }))}
+                    disabled={!isFieldEditable('fechaNacimiento')}
+                    className={!isFieldEditable('fechaNacimiento') ? 'bg-gray-50' : ''}
+                  />
                 </div>
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><Phone className="h-4 w-4" />Teléfono</Label>
-                  {isEditing ? (
-                    <Input value={formData.telefono} onChange={(e) => setFormData({ ...formData, telefono: e.target.value })} />
-                  ) : (
-                    <Input value={cliente?.telefono || ''} disabled className="bg-gray-50" />
-                  )}
+                  <Input
+                    value={formData.telefono}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, telefono: e.target.value }))}
+                    disabled={!isFieldEditable('telefono')}
+                    className={!isFieldEditable('telefono') ? 'bg-gray-50' : ''}
+                  />
                 </div>
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><MapPin className="h-4 w-4" />Distrito</Label>
-                  <Input value={cliente?.distrito?.nombre || ''} disabled className="bg-gray-50" />
+                  {isFieldEditable('distrito') ? (
+                    <Input
+                      list="distritos-perfil"
+                      value={formData.distrito}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, distrito: e.target.value }))}
+                    />
+                  ) : (
+                    <Input value={formData.distrito} disabled className="bg-gray-50" />
+                  )}
+                  <datalist id="distritos-perfil">
+                    {distritos.map((distrito) => (
+                      <option key={distrito.id} value={distrito.nombre} />
+                    ))}
+                  </datalist>
                 </div>
               </div>
+
+              {isGoogleUser ? (
+                <p className="text-sm text-slate-500">Puedes completar o actualizar todos tus datos del perfil porque tu cuenta se creó con Google.</p>
+              ) : (
+                <p className="text-sm text-slate-500">Para cuentas locales solo se permite editar teléfono y distrito.</p>
+              )}
 
               <div className="pt-2">
                 {isEditing ? (
                   <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={() => setIsEditing(false)}>Cancelar</Button>
-                    <Button className="flex-1 bg-[#8B4513] hover:bg-[#5D2E0C]" onClick={handleSave} disabled={isLoading}>
+                    <Button variant="outline" className="flex-1" onClick={handleCancel}>Cancelar</Button>
+                    <Button className="flex-1 bg-[#8B4513] hover:bg-[#5D2E0C]" onClick={handleSave} disabled={isSaving || isLoading}>
                       <Save className="mr-2 h-4 w-4" />Guardar Cambios
                     </Button>
                   </div>
                 ) : (
-                  <Button variant="outline" className="w-full" onClick={() => setIsEditing(true)}>
+                  <Button variant="outline" className="w-full" onClick={() => setIsEditing(true)} disabled={isLoading || !cliente}>
                     <Edit2 className="mr-2 h-4 w-4" />Editar Perfil
                   </Button>
                 )}
