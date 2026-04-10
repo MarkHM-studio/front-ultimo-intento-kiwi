@@ -37,6 +37,12 @@ const getApiErrorMessage = (error: any): string => {
   return 'No pudimos completar la solicitud. Inténtalo nuevamente.';
 };
 
+const formatDistrito = (cliente: any): string => {
+  if (!cliente) return '';
+  if (typeof cliente.distrito === 'string') return cliente.distrito;
+  return cliente.distrito?.nombre || '';
+};
+
 export const PerfilPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
@@ -51,6 +57,7 @@ export const PerfilPage: React.FC = () => {
 
   const provider = user?.provider || user?.proveedor;
   const isGoogleUser = provider === 'GOOGLE';
+  const hasStoredBirthDate = Boolean(cliente?.fechaNacimiento);
 
   const initials = useMemo(() => {
     const full = user?.nombreCompleto || user?.correo || 'CL';
@@ -59,8 +66,14 @@ export const PerfilPage: React.FC = () => {
 
   const isFieldEditable = (field: keyof PerfilFormData) => {
     if (!isEditing) return false;
-    if (isGoogleUser) return true;
-    return field === 'telefono' || field === 'distrito';
+
+    if (field === 'telefono' || field === 'distrito') return true;
+
+    if (field === 'fechaNacimiento') {
+      return isGoogleUser && !hasStoredBirthDate;
+    }
+
+    return false;
   };
 
   const loadPerfil = async () => {
@@ -83,7 +96,7 @@ export const PerfilPage: React.FC = () => {
         correo: clienteData.correo || user.correo || '',
         fechaNacimiento: clienteData.fechaNacimiento || '',
         telefono: clienteData.telefono || '',
-        distrito: clienteData.distrito?.nombre || '',
+        distrito: formatDistrito(clienteData),
       });
     } catch (error: any) {
       toast.error(`No se pudo cargar tu perfil. ${getApiErrorMessage(error)}`);
@@ -106,7 +119,7 @@ export const PerfilPage: React.FC = () => {
         correo: cliente.correo || user.correo || '',
         fechaNacimiento: cliente.fechaNacimiento || '',
         telefono: cliente.telefono || '',
-        distrito: cliente.distrito?.nombre || '',
+        distrito: formatDistrito(cliente),
       });
     }
     setIsEditing(false);
@@ -115,16 +128,23 @@ export const PerfilPage: React.FC = () => {
   const handleSave = async () => {
     if (!cliente) return;
 
+    const today = new Date().toISOString().slice(0, 10);
+    if (formData.fechaNacimiento && formData.fechaNacimiento > today) {
+      toast.error('La fecha de nacimiento no puede ser futura. Verifica la fecha e inténtalo nuevamente.');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const distritoName = formData.distrito.trim();
+      const usuarioId = (cliente as any)?.usuario?.id ?? (cliente as any)?.usuarioId ?? user.usuarioId;
       const payload = {
-        nombre: formData.nombre.trim(),
-        apellido: formData.apellido.trim(),
-        fechaNacimiento: formData.fechaNacimiento || null,
+        nombre: (cliente.nombre || '').trim(),
+        apellido: (cliente.apellido || '').trim(),
+        fechaNacimiento: (isGoogleUser && !hasStoredBirthDate ? formData.fechaNacimiento : cliente.fechaNacimiento) || null,
         telefono: formData.telefono.trim(),
-        correo: formData.correo.trim().toLowerCase(),
-        usuarioId: cliente.usuario?.id,
+        correo: (cliente.correo || user.correo || '').trim().toLowerCase(),
+        usuarioId,
         distrito: distritoName,
       };
 
@@ -166,35 +186,21 @@ export const PerfilPage: React.FC = () => {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><User className="h-4 w-4" />Nombre</Label>
-                  <Input
-                    value={formData.nombre}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, nombre: e.target.value }))}
-                    disabled={!isFieldEditable('nombre')}
-                    className={!isFieldEditable('nombre') ? 'bg-gray-50' : ''}
-                  />
+                  <Input value={formData.nombre} disabled className="bg-gray-50" />
                 </div>
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><User className="h-4 w-4" />Apellido</Label>
-                  <Input
-                    value={formData.apellido}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, apellido: e.target.value }))}
-                    disabled={!isFieldEditable('apellido')}
-                    className={!isFieldEditable('apellido') ? 'bg-gray-50' : ''}
-                  />
+                  <Input value={formData.apellido} disabled className="bg-gray-50" />
                 </div>
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><Mail className="h-4 w-4" />Correo</Label>
-                  <Input
-                    value={formData.correo}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, correo: e.target.value }))}
-                    disabled={!isFieldEditable('correo')}
-                    className={!isFieldEditable('correo') ? 'bg-gray-50' : ''}
-                  />
+                  <Input value={formData.correo} disabled className="bg-gray-50" />
                 </div>
                 <div>
                   <Label className="mb-1 flex items-center gap-2 text-gray-500"><Calendar className="h-4 w-4" />Fecha de Nacimiento</Label>
                   <Input
                     type="date"
+                    max={new Date().toISOString().slice(0, 10)}
                     value={formData.fechaNacimiento || ''}
                     onChange={(e) => setFormData((prev) => ({ ...prev, fechaNacimiento: e.target.value }))}
                     disabled={!isFieldEditable('fechaNacimiento')}
@@ -230,7 +236,9 @@ export const PerfilPage: React.FC = () => {
               </div>
 
               {isGoogleUser ? (
-                <p className="text-sm text-slate-500">Puedes completar o actualizar todos tus datos del perfil porque tu cuenta se creó con Google.</p>
+                <p className="text-sm text-slate-500">
+                  Puedes editar tu fecha de nacimiento solo una vez. Luego solo podrás actualizar teléfono y distrito.
+                </p>
               ) : (
                 <p className="text-sm text-slate-500">Para cuentas locales solo se permite editar teléfono y distrito.</p>
               )}
