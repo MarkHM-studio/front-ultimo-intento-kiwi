@@ -4,10 +4,10 @@ import { MainLayout } from '@/components/common/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ChefHat, Clock, CheckCircle, Utensils, AlertCircle } from 'lucide-react';
+import { ChefHat, Clock, CheckCircle, Utensils } from 'lucide-react';
 
 export const CocineroDashboard: React.FC = () => {
-  const { pedidos, fetchPedidos, marcarPreparando, marcarListo, isLoading } = usePedidoStore();
+  const { pedidos, fetchPedidos, marcarPreparando, marcarListo } = usePedidoStore();
   const [activeTab, setActiveTab] = useState<'pendientes' | 'preparando' | 'listo' | 'todos'>('pendientes');
 
   useEffect(() => {
@@ -77,6 +77,19 @@ export const CocineroDashboard: React.FC = () => {
     if (tipoStr === 'COMER') return <Badge variant="outline" className="text-blue-600 border-blue-300">Comer</Badge>;
     return <Badge variant="outline" className="text-orange-600 border-orange-300">Llevar</Badge>;
   };
+  const getEstadoBorderClass = (estado: string) => {
+    switch (estado) {
+      case 'PENDIENTE':
+      case 'MODIFICADO':
+        return 'border-l-yellow-500';
+      case 'PREPARANDO':
+        return 'border-l-blue-500';
+      case 'LISTO':
+        return 'border-l-green-500';
+      default:
+        return 'border-l-slate-300';
+    }
+  };
 
   return (
     <MainLayout>
@@ -90,60 +103,9 @@ export const CocineroDashboard: React.FC = () => {
             </h2>
             <p className="text-gray-500">Gestiona los pedidos de la cocina</p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => fetchPedidos()}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Actualizando...' : 'Actualizar'}
-          </Button>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="border-l-4 border-l-yellow-500">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Pendientes</p>
-                  <p className="text-3xl font-bold text-gray-900">{pedidosPendientesCocina.length}</p>
-                </div>
-                <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                  <AlertCircle className="h-6 w-6 text-yellow-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-blue-500">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Preparando</p>
-                  <p className="text-3xl font-bold text-gray-900">{pedidosPreparandoCocina.length}</p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <Clock className="h-6 w-6 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-l-4 border-l-green-500">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Listos Hoy</p>
-                  <p className="text-3xl font-bold text-gray-900">
-                    {pedidosCocina.filter(p => p.estado === 'LISTO').length}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-green-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+            Listos hoy: {pedidosListosCocina.length}
+          </Badge>
         </div>
 
         {/* Tabs */}
@@ -187,7 +149,7 @@ export const CocineroDashboard: React.FC = () => {
             </div>
           ) : (
             getPedidosToShow().map((pedido) => (
-              <Card key={pedido.id} className={`${pedido.estado === 'PENDIENTE' ? 'border-yellow-400' : ''}`}>
+              <Card key={pedido.id} className={`border-l-4 ${getEstadoBorderClass(pedido.estado)}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{pedido.producto?.nombre || `Producto #${pedido.productoId ?? pedido.id}`}</CardTitle>

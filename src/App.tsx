@@ -46,6 +46,8 @@ import { AlmaceneroDashboard } from '@/pages/almacenero/AlmaceneroDashboard';
 
 // Cliente pages
 import { ClienteDashboard } from '@/pages/cliente/ClienteDashboard';
+import { MisReservasPage } from '@/pages/cliente/MisReservasPage';
+import { PerfilPage } from '@/pages/cliente/PerfilPage';
 
 function App() {
   const { token, user, fetchCurrentUser, logout } = useAuthStore();
@@ -320,7 +322,15 @@ return (
           path="/cliente/perfil"
           element={
             <ProtectedRoute allowedRoles={['CLIENTE']}>
-              <ClienteDashboard />
+              <PerfilPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cliente/mis-reservas"
+          element={
+            <ProtectedRoute allowedRoles={['CLIENTE']}>
+              <MisReservasPage />
             </ProtectedRoute>
           }
         />

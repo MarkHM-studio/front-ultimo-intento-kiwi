@@ -58,6 +58,16 @@ export const RecepcionistaDashboard: React.FC = () => {
       default: return <Badge>{estado}</Badge>;
     }
   };
+  const getEstadoBorderClass = (estado: string) => {
+    switch (estado) {
+      case 'ESPERANDO PAGO': return 'border-l-yellow-500';
+      case 'PAGADO': return 'border-l-green-500';
+      case 'CANCELADO': return 'border-l-slate-400';
+      case 'EXPIRADO':
+      case 'NO_SHOW': return 'border-l-red-500';
+      default: return 'border-l-slate-300';
+    }
+  };
 
   const reservasHoy = reservas.filter(r => {
     const hoy = new Date().toISOString().split('T')[0];
@@ -128,13 +138,7 @@ export const RecepcionistaDashboard: React.FC = () => {
             </h2>
             <p className="text-gray-500">Verifica y administra las reservas de los clientes</p>
           </div>
-          <Button 
-            variant="outline" 
-            onClick={() => fetchReservas()}
-            disabled={isLoading}
-          >
-            {isLoading ? 'Actualizando...' : 'Actualizar'}
-          </Button>
+          {isLoading && <Badge variant="outline">Actualizando…</Badge>}
         </div>
 
         {/* Stats */}
@@ -275,7 +279,7 @@ export const RecepcionistaDashboard: React.FC = () => {
             </div>
           ) : (
             filteredReservas.map((reserva) => (
-              <Card key={reserva.id}>
+              <Card key={reserva.id} className={`border-l-4 ${getEstadoBorderClass(reserva.estado)}`}>
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">Reserva #{reserva.id}</CardTitle>

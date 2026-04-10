@@ -1,275 +1,208 @@
-import { useEffect } from 'react';
-import { useAdminStore, useComprobanteStore } from '@/stores';
+import { useEffect, useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { useAdminStore, useComprobanteStore, useReservaStore } from '@/stores';
 import { MainLayout } from '@/components/common/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { 
-  DollarSign, 
-  ShoppingCart, 
-  Users, 
-  Calendar, 
+import {
+  DollarSign,
+  ShoppingCart,
+  Users,
+  Calendar,
   TrendingUp,
-  Download,
-  Package,
-  Utensils
+  AlertTriangle,
+  ArrowRight,
+  ChefHat,
+  Wine,
 } from 'lucide-react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
 } from 'recharts';
 
+const formatMoney = (value: number) => `S/ ${value.toFixed(2)}`;
+
 export const Dashboard: React.FC = () => {
-  const { 
-    dashboardStats, 
-    fetchDashboardStats,
-    productos,
-    fetchProductos
-  } = useAdminStore();
+  const { dashboardStats, fetchDashboardStats, productos, fetchProductos } = useAdminStore();
   const { comprobantes, fetchComprobantes } = useComprobanteStore();
+  const { reservas, fetchReservas } = useReservaStore();
 
   useEffect(() => {
     fetchDashboardStats();
     fetchComprobantes();
     fetchProductos();
-  }, []);
+    fetchReservas();
+  }, [fetchDashboardStats, fetchComprobantes, fetchProductos, fetchReservas]);
 
-  // Datos de ejemplo para gráficos (en producción vendrían del backend)
-  const ventasSemanaData = [
-    { dia: 'Lun', ventas: 1200 },
-    { dia: 'Mar', ventas: 1900 },
-    { dia: 'Mie', ventas: 1500 },
-    { dia: 'Jue', ventas: 2200 },
-    { dia: 'Vie', ventas: 2800 },
-    { dia: 'Sab', ventas: 3500 },
-    { dia: 'Dom', ventas: 3100 },
-  ];
+  const paidComprobantes = useMemo(() => comprobantes.filter((c) => c.estado === 'PAGADO'), [comprobantes]);
 
-  const productosData = productos.slice(0, 5).map(p => ({
-    nombre: p.nombre,
-    stock: p.stock
-  }));
+  const ventasUltimos7Dias = useMemo(() => {
+    const today = new Date();
+    const days = Array.from({ length: 7 }).map((_, index) => {
+      const date = new Date(today);
+      date.setDate(today.getDate() - (6 - index));
+      const key = date.toISOString().slice(0, 10);
+      const total = paidComprobantes
+        .filter((comprobante) => (comprobante.fechaHoraVenta || '').slice(0, 10) === key)
+        .reduce((sum, comprobante) => sum + Number(comprobante.total || 0), 0);
+      return {
+        dia: date.toLocaleDateString('es-PE', { weekday: 'short' }),
+        fecha: key,
+        ventas: total,
+      };
+    });
 
-  const comprobantesAbiertos = comprobantes.filter(c => c.estado === 'ABIERTO').length;
-  const reservasPendientes = dashboardStats?.reservasPendientes || 0;
+    return days;
+  }, [paidComprobantes]);
 
-  const exportarReporte = (tipo: string) => {
-    // Implementar exportación a Excel
-    console.log(`Exportando reporte de ${tipo}...`);
-  };
+  const topCategorias = useMemo(() => {
+    const grouped = productos.reduce<Record<string, number>>((acc, product) => {
+      const key = product.categoria?.nombre || 'Sin categoría';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+
+    return Object.entries(grouped)
+      .map(([categoria, total]) => ({ categoria, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 6);
+  }, [productos]);
+
+  const reservasPendientes = reservas.filter((r) => r.estado === 'ESPERANDO PAGO').length;
+  const reservasConfirmadas = reservas.filter((r) => r.estado === 'PAGADO').length;
+  const pedidosAbiertos = comprobantes.filter((c) => c.estado === 'ABIERTO').length;
+  const stockCritico = productos.filter((p) => p.stock <= 3).length;
 
   return (
     <MainLayout>
       <div className="space-y-6">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <section className="rounded-2xl bg-gradient-to-r from-slate-900 via-slate-800 to-[#8B4513] p-6 text-white shadow-lg">
+          <h2 className="text-2xl font-bold">Dashboard Ejecutivo</h2>
+          <p className="mt-1 text-sm text-white/80">
+            Resumen operativo en tiempo real y accesos rápidos a reportes detallados.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button asChild variant="secondary" className="bg-white text-slate-900 hover:bg-slate-100">
+              <Link to="/admin/reportes">Ir a Reportes <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+          </div>
+        </section>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Ventas Hoy</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    S/ {dashboardStats?.ventasHoy.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-green-600" />
-                </div>
+            <CardContent className="p-5">
+              <p className="text-sm text-slate-500">Ventas hoy</p>
+              <p className="mt-1 text-2xl font-bold">{formatMoney(Number(dashboardStats?.ventasHoy || 0))}</p>
+              <div className="mt-3 flex items-center gap-2 text-xs text-emerald-700">
+                <DollarSign className="h-4 w-4" /> Ingreso diario
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Pedidos Hoy</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {dashboardStats?.totalPedidosHoy || 0}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <ShoppingCart className="h-6 w-6 text-blue-600" />
-                </div>
+            <CardContent className="p-5">
+              <p className="text-sm text-slate-500">Comprobantes abiertos</p>
+              <p className="mt-1 text-2xl font-bold">{pedidosAbiertos}</p>
+              <div className="mt-3 flex items-center gap-2 text-xs text-amber-700">
+                <ShoppingCart className="h-4 w-4" /> Mesas en consumo
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Mesas Ocupadas</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {dashboardStats?.mesasOcupadas || 0}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center">
-                  <Users className="h-6 w-6 text-amber-600" />
-                </div>
+            <CardContent className="p-5">
+              <p className="text-sm text-slate-500">Reservas confirmadas</p>
+              <p className="mt-1 text-2xl font-bold">{reservasConfirmadas}</p>
+              <div className="mt-3 flex items-center gap-2 text-xs text-blue-700">
+                <Calendar className="h-4 w-4" /> Reservas pagadas
               </div>
             </CardContent>
           </Card>
-
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-500">Reservas Pendientes</p>
-                  <p className="text-2xl font-bold text-gray-900">
-                    {reservasPendientes}
-                  </p>
-                </div>
-                <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-purple-600" />
-                </div>
+            <CardContent className="p-5">
+              <p className="text-sm text-slate-500">Stock crítico</p>
+              <p className="mt-1 text-2xl font-bold">{stockCritico}</p>
+              <div className="mt-3 flex items-center gap-2 text-xs text-rose-700">
+                <AlertTriangle className="h-4 w-4" /> Productos con stock ≤ 3
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Charts Row 1 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Ventas de la Semana
-              </CardTitle>
+              <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" />Ventas últimos 7 días</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={ventasSemanaData}>
+              <ResponsiveContainer width="100%" height={280}>
+                <LineChart data={ventasUltimos7Dias}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="dia" />
                   <YAxis />
-                  <Tooltip formatter={(value) => `S/ ${value}`} />
-                  <Bar dataKey="ventas" fill="#d97706" />
-                </BarChart>
+                  <Tooltip formatter={(value) => formatMoney(Number(value))} labelFormatter={(label, payload) => `${label} (${payload?.[0]?.payload?.fecha || ''})`} />
+                  <Line type="monotone" dataKey="ventas" stroke="#b45309" strokeWidth={3} dot={{ r: 4 }} />
+                </LineChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Package className="h-5 w-5" />
-                Stock de Productos
-              </CardTitle>
+              <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" />Mix por categorías</CardTitle>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={productosData} layout="vertical">
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={topCategorias}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis type="number" />
-                  <YAxis dataKey="nombre" type="category" width={100} />
+                  <XAxis dataKey="categoria" tick={{ fontSize: 11 }} interval={0} angle={-15} textAnchor="end" height={80} />
+                  <YAxis allowDecimals={false} />
                   <Tooltip />
-                  <Bar dataKey="stock" fill="#f59e0b" />
+                  <Bar dataKey="total" fill="#0ea5e9" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
 
-        {/* Estado Actual */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card>
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <Card className="lg:col-span-2">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Utensils className="h-5 w-5" />
-                Estado de Comprobantes
-              </CardTitle>
+              <CardTitle>Mini-reportes operativos</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-amber-500 rounded-full"></div>
-                    <span>Abiertos</span>
-                  </div>
-                  <Badge variant="secondary">{comprobantesAbiertos}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span>Pagados</span>
-                  </div>
-                  <Badge variant="secondary">
-                    {comprobantes.filter(c => c.estado === 'PAGADO').length}
-                  </Badge>
-                </div>
+            <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="rounded-xl border p-4">
+                <p className="text-sm text-slate-500">Reservas pendientes</p>
+                <p className="text-2xl font-bold text-amber-600">{reservasPendientes}</p>
+                <Button asChild variant="link" className="h-auto p-0 text-[#8B4513]"><Link to="/admin/reportes">Ver detalle</Link></Button>
               </div>
-           </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                Reservas de Hoy
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                    <span>Esperando Pago</span>
-                  </div>
-                  <Badge variant="secondary">{reservasPendientes}</Badge>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                    <span>Confirmadas</span>
-                  </div>
-                  <Badge variant="secondary">
-                    0
-                  </Badge>
-                </div>
+              <div className="rounded-xl border p-4">
+                <p className="text-sm text-slate-500">Ítems comida</p>
+                <p className="text-2xl font-bold text-emerald-700">{productos.filter((p) => p.categoria?.id === 1).length}</p>
+                <ChefHat className="mt-2 h-4 w-4 text-emerald-700" />
+              </div>
+              <div className="rounded-xl border p-4">
+                <p className="text-sm text-slate-500">Ítems bebida</p>
+                <p className="text-2xl font-bold text-sky-700">{productos.filter((p) => [2, 3, 4].includes(p.categoria?.id || 0)).length}</p>
+                <Wine className="mt-2 h-4 w-4 text-sky-700" />
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Download className="h-5 w-5" />
-                Exportar Reportes
-              </CardTitle>
+              <CardTitle>Alertas</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportarReporte('ventas')}
-                >
-                  <DollarSign className="mr-2 h-4 w-4" />
-                  Reporte de Ventas
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportarReporte('productos')}
-                >
-                  <Package className="mr-2 h-4 w-4" />
-                  Reporte de Productos
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="w-full justify-start"
-                  onClick={() => exportarReporte('usuarios')}
-                >
-                  <Users className="mr-2 h-4 w-4" />
-                  Reporte de Usuarios
-                </Button>
-              </div>
+            <CardContent className="space-y-2">
+              <div className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">Stock crítico: <strong>{stockCritico}</strong> productos.</div>
+              <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">Reservas esperando pago: <strong>{reservasPendientes}</strong>.</div>
+              <Badge className="bg-slate-900">Monitoreo activo</Badge>
             </CardContent>
           </Card>
         </div>

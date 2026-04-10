@@ -71,8 +71,8 @@ const navItems: NavItem[] = [
   { label: 'Reservas', href: '/recepcionista', icon: <Calendar className="h-5 w-5" />, roles: ['RECEPCIONISTA'] },
   { label: 'Entradas', href: '/almacenero', icon: <Warehouse className="h-5 w-5" />, roles: ['ALMACENERO'] },
   { label: 'Insumos', href: '/almacenero/insumos', icon: <Package className="h-5 w-5" />, roles: ['ALMACENERO'] },
-  { label: 'Mis Reservas', href: '/cliente', icon: <Calendar className="h-5 w-5" />, roles: ['CLIENTE'] },
-  { label: 'Nueva Reserva', href: '/cliente/nueva', icon: <Home className="h-5 w-5" />, roles: ['CLIENTE'] },
+  { label: 'Reservar Mesa', href: '/cliente', icon: <Home className="h-5 w-5" />, roles: ['CLIENTE'] },
+  { label: 'Mis Reservas', href: '/cliente/mis-reservas', icon: <Calendar className="h-5 w-5" />, roles: ['CLIENTE'] },
   { label: 'Mi Perfil', href: '/cliente/perfil', icon: <User className="h-5 w-5" />, roles: ['CLIENTE'] },
 ];
 
@@ -127,7 +127,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 px-2 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto px-2 py-4">
         {filteredNavItems.map((item) => {
           const isActive = location.pathname === item.href;
           return (

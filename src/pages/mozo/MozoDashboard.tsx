@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, ShoppingCart, Edit, CheckCircle, Users, Table as TableIcon, Trash2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Plus, ShoppingCart, Edit, CheckCircle, Users, Table as TableIcon, Trash2, ChefHat, Wine, ShoppingBag } from 'lucide-react';
 import type { PedidoRequest, ProductoResponse } from '@/types';
 import { useAuthStore } from '@/stores';
 import { toast } from 'sonner';
@@ -63,6 +64,8 @@ export const MozoDashboard: React.FC = () => {
     tipoEntregaId: 1,
     usuarioId: user?.usuarioId || 0
   });
+
+  const [selectedProducto, setSelectedProducto] = useState<number | null>(null);
 
    useEffect(() => {
     fetchComprobantes();
@@ -144,6 +147,8 @@ export const MozoDashboard: React.FC = () => {
 
   const openNuevoPedido = async () => {
     await fetchProductosDisponibles();
+    setSelectedProducto(null);
+    setFormData((prev) => ({ ...prev, cantidad: 1, tipoEntregaId: 1 }));
     setIsNuevoPedidoOpen(true);
   };
 
@@ -190,13 +195,14 @@ export const MozoDashboard: React.FC = () => {
     if (!selectedComprobante) return;
     
     try {
-      if (!formData.productoId) {
+      if (!(selectedProducto || formData.productoId)) {
         toast.error('Debes seleccionar un producto disponible.');
         return;
       }
 
      await createPedido({
         ...formData,
+        productoId: selectedProducto || formData.productoId,
         comprobanteId: selectedComprobante,
         usuarioId: user?.usuarioId || 0
       });
@@ -208,6 +214,7 @@ export const MozoDashboard: React.FC = () => {
         tipoEntregaId: 1,
         usuarioId: user?.usuarioId || 0
       });
+      setSelectedProducto(null);
       await fetchPedidosByComprobante(selectedComprobante);
       fetchComprobantes();
       await fetchProductosDisponibles();
@@ -324,6 +331,14 @@ export const MozoDashboard: React.FC = () => {
       default: return <Badge>{estado}</Badge>;
     }
   };
+  const productosComida = productosDisponibles.filter((p) => {
+    const categoryName = (p.categoria?.nombre || '').trim().toUpperCase();
+    return p.categoria?.id === 1 || categoryName.startsWith('PLATO') || categoryName.startsWith('COMIDA');
+  });
+  const productosBebida = productosDisponibles.filter((p) => {
+    const categoryName = (p.categoria?.nombre || '').trim().toUpperCase();
+    return [2, 3, 4].includes(p.categoria?.id || 0) || categoryName.startsWith('BEBIDA');
+  });
 
   return (
     <MainLayout>
@@ -548,7 +563,7 @@ export const MozoDashboard: React.FC = () => {
           </DialogContent>
         </Dialog>
 
-         {/* Dialog Nuevo Pedido */}
+        {/* Dialog Nuevo Pedido */}
         <Dialog open={isNuevoPedidoOpen} onOpenChange={setIsNuevoPedidoOpen}>
           <DialogContent>
             <DialogHeader>
@@ -559,70 +574,89 @@ export const MozoDashboard: React.FC = () => {
             </DialogHeader>
             <form onSubmit={handleCrearPedido}>
               <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>Producto</Label>
-                  {productosDisponiblesError ? (
-                    <div className="space-y-2">
-                      <p className="text-sm text-red-600">{productosDisponiblesError}</p>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={formData.productoId || ''}
-                        onChange={(e) => setFormData({ ...formData, productoId: parseInt(e.target.value) || 0 })}
-                        placeholder="Ingresa el ID de producto"
-                      />
-                    </div>
-                  ) : (
+                {productosDisponiblesError ? (
+                  <div className="space-y-2">
+                    <p className="text-sm text-red-600">{productosDisponiblesError}</p>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={formData.productoId || ''}
+                      onChange={(e) => setFormData({ ...formData, productoId: parseInt(e.target.value) || 0 })}
+                      placeholder="Ingresa el ID de producto"
+                    />
+                  </div>
+                ) : (
+                  <Tabs defaultValue="comida">
+                    <TabsList className="w-full">
+                      <TabsTrigger value="comida" className="flex-1"><ChefHat className="mr-2 h-4 w-4" />Comida</TabsTrigger>
+                      <TabsTrigger value="bebida" className="flex-1"><Wine className="mr-2 h-4 w-4" />Bebida</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="comida">
+                      <div className="grid max-h-48 grid-cols-2 gap-2 overflow-auto">
+                        {productosComida.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setSelectedProducto(p.id)}
+                            className={`rounded-lg border p-3 text-left transition-all ${selectedProducto === p.id ? 'border-[#8B4513] bg-[#8B4513]/10' : 'border-gray-200'}`}
+                          >
+                            <p className="text-sm font-medium">{p.nombre}</p>
+                            <p className="text-xs text-gray-500">S/ {Number(p.precio).toFixed(2)}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="bebida">
+                      <div className="grid max-h-48 grid-cols-2 gap-2 overflow-auto">
+                        {productosBebida.map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setSelectedProducto(p.id)}
+                            className={`rounded-lg border p-3 text-left transition-all ${selectedProducto === p.id ? 'border-[#8B4513] bg-[#8B4513]/10' : 'border-gray-200'}`}
+                          >
+                            <p className="text-sm font-medium">{p.nombre}</p>
+                            <p className="text-xs text-gray-500">S/ {Number(p.precio).toFixed(2)}</p>
+                          </button>
+                        ))}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Cantidad</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={formData.cantidad}
+                      onChange={(e) => setFormData({ ...formData, cantidad: parseInt(e.target.value) })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Tipo de Entrega</Label>
                     <Select
-                      value={formData.productoId ? formData.productoId.toString() : ''}
-                      onValueChange={(value) => setFormData({ ...formData, productoId: parseInt(value) })}
+                      value={formData.tipoEntregaId.toString()}
+                      onValueChange={(value) => setFormData({ ...formData, tipoEntregaId: parseInt(value) })}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona un producto con stock" />
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {productosDisponibles.length === 0 ? (
-                          <div className="px-2 py-1 text-sm text-gray-500">No hay productos con stock disponible.</div>
-                        ) : productosDisponibles.map((producto) => (
-                          <SelectItem key={producto.id} value={producto.id.toString()}>
-                            {producto.nombre}
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="1">Para Comer</SelectItem>
+                        <SelectItem value="2">Para Llevar (Taper)</SelectItem>
                       </SelectContent>
                     </Select>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>Cantidad</Label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formData.cantidad}
-                    onChange={(e) => setFormData({ ...formData, cantidad: parseInt(e.target.value) })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Tipo de Entrega</Label>
-                  <Select 
-                    value={formData.tipoEntregaId.toString()} 
-                    onValueChange={(value) => setFormData({ ...formData, tipoEntregaId: parseInt(value) })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona tipo de entrega" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">Para Comer</SelectItem>
-                      <SelectItem value="2">Para Llevar</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setIsNuevoPedidoOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" className="bg-amber-600 hover:bg-amber-700">
-                  Agregar Pedido
+                <Button type="submit" className="bg-[#8B4513] hover:bg-[#5D2E0C]" disabled={!selectedProducto && !formData.productoId}>
+                  <ShoppingBag className="mr-2 h-4 w-4" />
+                  Agregar
                 </Button>
               </DialogFooter>
             </form>

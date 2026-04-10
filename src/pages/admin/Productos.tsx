@@ -9,7 +9,7 @@ import { RowActions } from '@/pages/admin/components/RowActions';
 import type { ProductoRequest } from '@/types';
 import { useTablePagination } from '@/hooks/useTablePagination';
 import { TablePagination } from '@/pages/admin/components/TablePagination';
-import { getProductType, getProductTypeClass } from '@/pages/admin/components/categoryUtils';
+import { getCategoryClass, getProductType, getProductTypeClass } from '@/pages/admin/components/categoryUtils';
 
 const initialForm: ProductoRequest = { nombre: '', precio: 0, stock: 0, categoriaId: 0, marcaId: undefined };
 const PREPARED_CATEGORY_IDS = [1, 2];
@@ -80,7 +80,11 @@ export const Productos: React.FC = () => {
               {paginatedData.map((product) => (
                 <tr key={product.id} className="even:bg-slate-50/30">
                   <td className="px-4 py-3 font-medium">{product.nombre}<div className="text-xs text-slate-500">Marca: {product.marca?.nombre || 'Sin marca'}</div></td>
-                  <td className="px-4 py-3">{product.categoria?.nombre || '-'}</td>
+                  <td className="px-4 py-3">
+                    <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getCategoryClass(product.categoria?.id, product.categoria?.nombre)}`}>
+                      {product.categoria?.nombre || '-'}
+                    </span>
+                  </td>
                   <td className="px-4 py-3">
                     {(() => {
                       const tipo = getProductType(product.categoria);
