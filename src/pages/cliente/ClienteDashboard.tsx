@@ -212,7 +212,7 @@ export const ClienteDashboard: React.FC = () => {
                     <TableIcon className={`mx-auto mb-2 h-6 w-6 ${selectedMesas.includes(mesa.mesaId) ? 'text-white' : 'text-gray-400'}`} />
                     <p className="text-sm font-medium">{mesa.nombre || mesa.mesaNombre || `Mesa ${mesa.mesaId}`}</p>
                     <p className={`text-xs ${selectedMesas.includes(mesa.mesaId) ? 'text-white/80' : 'text-gray-500'}`}>
-                      {(mesa.capacidad || 4)} pers.
+                      {(mesa.capacidad || 3)} pers.
                     </p>
                   </button>
                 ))}

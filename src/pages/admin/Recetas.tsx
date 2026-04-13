@@ -187,7 +187,7 @@ export const Recetas: React.FC = () => {
           <DialogHeader>
             <DialogTitle>{editingProductoId ? 'Actualizar receta' : 'Nueva receta'}</DialogTitle>
             <DialogDescription>
-              Cada receta se registra enviando `productoId`, `insumosId[]`, `cantidades[]` y `unidadesMedida[]` con igual tamaño.
+              
             </DialogDescription>
           </DialogHeader>
 
