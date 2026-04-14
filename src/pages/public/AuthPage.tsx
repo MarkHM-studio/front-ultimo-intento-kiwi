@@ -268,7 +268,7 @@ export const AuthPage: React.FC = () => {
                     <Field label="Contraseña">
                       <div className="relative">
                         <Input type={showPassword ? 'text' : 'password'} placeholder="TuContraseña@123" className="h-11 pr-10" {...loginForm.register('password', { onChange: onAnyChange })} />
-                        <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
+                        <button type="button" onClick={() => setShowPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}>{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                       </div>
                       <Err msg={loginForm.formState.errors.password?.message} />
                     </Field>
@@ -296,7 +296,7 @@ export const AuthPage: React.FC = () => {
                     <Field label="Contraseña">
                       <div className="relative">
                         <Input className="h-11 pr-10" placeholder="Segura@123" type={showRegisterPassword ? 'text' : 'password'} {...registerForm.register('password', { onChange: onAnyChange })} />
-                        <button type="button" onClick={() => setShowRegisterPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">{showRegisterPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
+                        <button type="button" onClick={() => setShowRegisterPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label={showRegisterPassword ? 'Ocultar contraseña de registro' : 'Mostrar contraseña de registro'}>{showRegisterPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                       </div>
                       <Err msg={registerForm.formState.errors.password?.message} />
                     </Field>
@@ -341,7 +341,7 @@ export const AuthPage: React.FC = () => {
                   <Field label="Contraseña nueva">
                     <div className="relative">
                       <Input type={showResetPassword ? 'text' : 'password'} placeholder="NuevaSegura@123" className="pr-10" {...resetForm.register('password', { onChange: onAnyChange })} />
-                      <button type="button" onClick={() => setShowResetPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">{showResetPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
+                      <button type="button" onClick={() => setShowResetPassword((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" aria-label={showResetPassword ? 'Ocultar nueva contraseña' : 'Mostrar nueva contraseña'}>{showResetPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                     </div>
                     <Err msg={resetForm.formState.errors.password?.message} />
                   </Field>
@@ -363,10 +363,10 @@ export const AuthPage: React.FC = () => {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
-      <Label>{label}</Label>
+    <Label className="space-y-2 block">
+      <span className="mb-2 block">{label}</span>
       {children}
-    </div>
+    </Label>
   );
 }
 
@@ -378,7 +378,7 @@ function Err({ msg }: { msg?: string }) {
 function AuthError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <Alert variant="destructive" className="mb-4">
+    <Alert variant="destructive" className="mb-4" role="alert" aria-live="assertive">
       <AlertCircle className="h-4 w-4" />
       <AlertDescription>{message}</AlertDescription>
     </Alert>

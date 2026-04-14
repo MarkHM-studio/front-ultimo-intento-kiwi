@@ -5,3 +5,4 @@ export { useReservaStore } from './reservaStore';
 export { useAdminStore } from './adminStore';
 export { useAlmacenStore } from './almacenStore';
 export { useMovimientoInsumoStore } from './movimientoInsumoStore';
+export { useAccessibilityStore } from './accessibilityStore';

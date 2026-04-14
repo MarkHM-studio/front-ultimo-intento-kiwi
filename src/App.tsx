@@ -4,6 +4,8 @@ import { ProtectedRoute } from '@/components/common/ProtectedRoute';
 import { RoleRedirect } from '@/components/common/RoleRedirect';
 import { useAuthStore } from '@/stores';
 import { useDataAutoRefresh } from '@/hooks/useDataAutoRefresh';
+import { AccessibilityPanel } from '@/components/accessibility/AccessibilityPanel';
+import { AccessibilityAnnouncer } from '@/components/accessibility/AccessibilityAnnouncer';
 
 // Public pages
 import { Welcome } from '@/pages/public/Welcome';
@@ -89,7 +91,15 @@ function App() {
 
 return (
     <BrowserRouter>
-      <Routes>
+      <a
+        href="#app-main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-md focus:bg-background focus:px-3 focus:py-2 focus:text-foreground focus:shadow-lg"
+      >
+        Saltar al contenido principal
+      </a>
+      <AccessibilityAnnouncer />
+      <main id="app-main-content">
+        <Routes>
         {/* Public Routes */}
         <Route path="/" element={token ? <RoleRedirect /> : <Welcome />} />
         <Route path="/login" element={<AuthPage />} />
@@ -342,7 +352,9 @@ return (
 
         {/* Catch all */}
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
+      </main>
+      <AccessibilityPanel />
     </BrowserRouter>
   );
 }
