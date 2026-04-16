@@ -121,7 +121,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </Link>
         <button
           onClick={() => setCollapsed((prev) => !prev)}
-          className="hidden rounded-lg p-1 text-gray-200 transition hover:bg-gray-700 lg:block"
+          className="hidden rounded-lg p-1 text-gray-200 transition hover:bg-gray-700 lg:block focus-visible:ring-2 focus-visible:ring-ring"
         >
           {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
         </button>
@@ -163,8 +163,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   );
 
   return (
-    <div className="min-h-screen bg-[#FDF8F3]">
-      <div className="sticky top-0 z-40 flex items-center justify-between border-b bg-white px-4 py-3 lg:hidden">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="sticky top-0 z-40 flex items-center justify-between border-b border-border bg-background/95 px-4 py-3 backdrop-blur lg:hidden">
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>
             <Button variant="ghost" size="icon">
@@ -176,7 +176,7 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
           </SheetContent>
         </Sheet>
 
-        <Link to="/" className="flex items-center gap-2 text-[#1F2937]">
+        <Link to="/" className="flex items-center gap-2 text-foreground">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#8B4513]">
             <span className="text-sm font-bold text-white">🍸</span>
           </div>
@@ -210,8 +210,8 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
         </aside>
 
         <main className="min-h-screen flex-1">
-          <header className="sticky top-0 z-30 hidden items-center justify-between border-b bg-white px-8 py-4 lg:flex">
-            <h1 className="text-2xl font-bold text-[#1F2937]">
+          <header className="sticky top-0 z-30 hidden items-center justify-between border-b border-border bg-background/95 px-8 py-4 backdrop-blur lg:flex">
+            <h1 className="text-2xl font-bold text-foreground">
               {filteredNavItems.find((item) => item.href === location.pathname)?.label || 'Dashboard'}
             </h1>
             <div className="flex items-center gap-4">

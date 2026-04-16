@@ -104,15 +104,14 @@ export const Trabajadores: React.FC = () => {
         onSearch={setSearch}
         onCreate={() => setOpen(true)}
         filters={(
-          <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'ACTIVO' | 'INACTIVO')}>
-            <option value="ACTIVO">ACTIVOS</option>
+          <select className="h-10 rounded-md border border-input px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'ACTIVO' | 'INACTIVO')}>
             <option value="INACTIVO">INACTIVOS</option>
           </select>
         )}
       >
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Trabajador</th>
                 <th className="px-4 py-3 text-left">Documento</th>
@@ -122,10 +121,10 @@ export const Trabajadores: React.FC = () => {
             </thead>
             <tbody>
               {paginatedData.map((worker: any) => (
-                <tr key={worker.id} className="even:bg-slate-50/30">
-                  <td className="px-4 py-3 font-medium">{worker.nombre} {worker.apellido}<div className="text-xs text-slate-500">{worker.correo}</div></td>
-                  <td className="px-4 py-3">DNI {worker.dni}<div className="text-xs text-slate-500">{worker.telefono}</div></td>
-                  <td className="px-4 py-3">{worker.tipoJornada?.nombre || worker.nombreJornada || '-'}<div className="text-xs text-slate-500">Turno: {worker.turno?.nombre || worker.nombreTurno || '-'}</div></td>
+                <tr key={worker.id} className="even:bg-muted/30">
+                  <td className="px-4 py-3 font-medium">{worker.nombre} {worker.apellido}<div className="text-xs text-muted-foreground">{worker.correo}</div></td>
+                  <td className="px-4 py-3">DNI {worker.dni}<div className="text-xs text-muted-foreground">{worker.telefono}</div></td>
+                  <td className="px-4 py-3">{worker.tipoJornada?.nombre || worker.nombreJornada || '-'}<div className="text-xs text-muted-foreground">Turno: {worker.turno?.nombre || worker.nombreTurno || '-'}</div></td>
                   <td className="px-4 py-3 text-right">
                     <RowActions
                       onEdit={() => {
@@ -187,13 +186,13 @@ export const Trabajadores: React.FC = () => {
             <Input placeholder="Correo" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
             <Input type="date" value={form.fechaInicio} onChange={(e) => setForm({ ...form, fechaInicio: e.target.value })} />
             <Input type="date" value={form.fechaFin || ''} onChange={(e) => setForm({ ...form, fechaFin: e.target.value })} />
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.estado || 'ACTIVO'} onChange={(e) => setForm({ ...form, estado: e.target.value as 'ACTIVO' | 'INACTIVO' })}>
+            <select className="h-10 rounded-md border border-input px-3 text-sm" value={form.estado || 'ACTIVO'} onChange={(e) => setForm({ ...form, estado: e.target.value as 'ACTIVO' | 'INACTIVO' })}>
               <option value="ACTIVO">ACTIVO</option>
               <option value="INACTIVO">INACTIVO</option>
             </select>
             <Input type="number" placeholder="ID Usuario" value={form.usuarioId} onChange={(e) => setForm({ ...form, usuarioId: Number(e.target.value) })} />
             <select
-              className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+              className="h-10 rounded-md border border-input px-3 text-sm"
               value={form.tipoJornadaId}
               onChange={(e) => {
                 const tipoJornadaId = Number(e.target.value);
@@ -210,7 +209,7 @@ export const Trabajadores: React.FC = () => {
                 </option>
               ))}
             </select>
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.turnoId} onChange={(e) => setForm({ ...form, turnoId: Number(e.target.value) })}>
+            <select className="h-10 rounded-md border border-input px-3 text-sm" value={form.turnoId} onChange={(e) => setForm({ ...form, turnoId: Number(e.target.value) })}>
               {turnosPermitidos.map((turno) => (
                 <option key={turno.id} value={turno.id}>
                   {turno.id} - {turno.label}

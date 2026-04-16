@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAdminStore, useComprobanteStore, useReservaStore } from '@/stores';
 import { MainLayout } from '@/components/common/MainLayout';
@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import {
   DollarSign,
   ShoppingCart,
-  Users,
   Calendar,
   TrendingUp,
   AlertTriangle,
@@ -27,31 +26,124 @@ import {
   LineChart,
   Line,
 } from 'recharts';
+import { comprobanteService } from '@/services/comprobanteService';
 
 const formatMoney = (value: number) => `S/ ${value.toFixed(2)}`;
 
+const getLocalDateKey = (value: Date | string) => {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}/.test(value.trim())) {
+    return value.trim().slice(0, 10);
+  }
+
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const sameDay = (value: string | undefined, target: string) => getLocalDateKey(value || '') === target;
+
+const getReservaDate = (reserva: any) =>
+  reserva.fechaReserva ||
+  reserva.fechaHoraVerificacionReserva ||
+  reserva.fechaVerificacionReserva ||
+  reserva.fechaHoraRegistro ||
+  reserva.fechaRegistro;
+
+const isReservaVerificada = (reserva: any) => {
+  const status = String(reserva.estado || '').toUpperCase();
+  return status === 'VERIFICADO' || Boolean(reserva.fechaHoraVerificacionReserva || reserva.fechaVerificacionReserva);
+};
+
 export const Dashboard: React.FC = () => {
-  const { dashboardStats, fetchDashboardStats, productos, fetchProductos } = useAdminStore();
+  const { productos, insumos, fetchProductos, fetchInsumos } = useAdminStore();
   const { comprobantes, fetchComprobantes } = useComprobanteStore();
   const { reservas, fetchReservas } = useReservaStore();
 
+  const [itemsComidaHoy, setItemsComidaHoy] = useState(0);
+  const [itemsBebidaHoy, setItemsBebidaHoy] = useState(0);
+
   useEffect(() => {
-    fetchDashboardStats();
     fetchComprobantes();
     fetchProductos();
+    fetchInsumos();
     fetchReservas();
-  }, [fetchDashboardStats, fetchComprobantes, fetchProductos, fetchReservas]);
+  }, [fetchComprobantes, fetchProductos, fetchInsumos, fetchReservas]);
 
-  const paidComprobantes = useMemo(() => comprobantes.filter((c) => c.estado === 'PAGADO'), [comprobantes]);
+  const todayKey = useMemo(() => getLocalDateKey(new Date()), []);
+
+  const paidComprobantes = useMemo(
+    () => comprobantes.filter((c) => String(c.estado).toUpperCase() === 'PAGADO'),
+    [comprobantes],
+  );
+
+  const paidComprobantesToday = useMemo(
+    () => paidComprobantes.filter((c) => sameDay(c.fechaHoraVenta || c.fechaHora_venta || c.fechaHoraApertura, todayKey)),
+    [paidComprobantes, todayKey],
+  );
+
+  useEffect(() => {
+    const loadItemsToday = async () => {
+      if (!paidComprobantesToday.length) {
+        setItemsComidaHoy(0);
+        setItemsBebidaHoy(0);
+        return;
+      }
+
+      try {
+        const detalles = await Promise.all(
+          paidComprobantesToday.map((comprobante) => comprobanteService.getPedidosByComprobante(comprobante.id)),
+        );
+
+        let comida = 0;
+        let bebida = 0;
+
+        detalles.flat().forEach((pedido) => {
+          const qty = Number(pedido.cantidad || 0);
+          const categoriaId = pedido.producto?.categoria?.id;
+          if (categoriaId === 1) comida += qty;
+          if ([2, 3, 4].includes(categoriaId || 0)) bebida += qty;
+        });
+
+        setItemsComidaHoy(comida);
+        setItemsBebidaHoy(bebida);
+      } catch {
+        setItemsComidaHoy(0);
+        setItemsBebidaHoy(0);
+      }
+    };
+
+    void loadItemsToday();
+  }, [paidComprobantesToday]);
+
+  const ventasHoy = paidComprobantesToday.reduce((sum, comprobante) => sum + Number(comprobante.total || 0), 0);
+
+  const reservasConfirmadasHoy = reservas.filter((reserva: any) => {
+    const status = String(reserva.estado || '').toUpperCase();
+    return (status === 'VERIFICADO' || isReservaVerificada(reserva)) && sameDay(getReservaDate(reserva), todayKey);
+  }).length;
+
+  const reservasPagadasHoy = reservas.filter((reserva: any) => {
+    const status = String(reserva.estado || '').toUpperCase();
+    return status === 'PAGADO' && sameDay(getReservaDate(reserva), todayKey);
+  }).length;
+
+  const reservasVerificadasHoy = reservas.filter((reserva: any) => isReservaVerificada(reserva) && sameDay(getReservaDate(reserva), todayKey)).length;
+
+  const pedidosAbiertos = comprobantes.filter((c) => String(c.estado).toUpperCase() === 'ABIERTO').length;
+  const stockCriticoInsumos = insumos.filter((insumo) => Number(insumo.stock || 0) <= 5).length;
+  const alertStockCriticoProductos = productos.filter((product) => Number(product.stock || 0) <= 10).length;
 
   const ventasUltimos7Dias = useMemo(() => {
     const today = new Date();
     const days = Array.from({ length: 7 }).map((_, index) => {
       const date = new Date(today);
       date.setDate(today.getDate() - (6 - index));
-      const key = date.toISOString().slice(0, 10);
+      const key = getLocalDateKey(date);
       const total = paidComprobantes
-        .filter((comprobante) => (comprobante.fechaHoraVenta || '').slice(0, 10) === key)
+        .filter((comprobante) => sameDay(comprobante.fechaHoraVenta || comprobante.fechaHora_venta || comprobante.fechaHoraApertura, key))
         .reduce((sum, comprobante) => sum + Number(comprobante.total || 0), 0);
       return {
         dia: date.toLocaleDateString('es-PE', { weekday: 'short' }),
@@ -76,11 +168,6 @@ export const Dashboard: React.FC = () => {
       .slice(0, 6);
   }, [productos]);
 
-  const reservasPendientes = reservas.filter((r) => r.estado === 'ESPERANDO PAGO').length;
-  const reservasConfirmadas = reservas.filter((r) => r.estado === 'PAGADO').length;
-  const pedidosAbiertos = comprobantes.filter((c) => c.estado === 'ABIERTO').length;
-  const stockCritico = productos.filter((p) => p.stock <= 3).length;
-
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -99,16 +186,16 @@ export const Dashboard: React.FC = () => {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <Card>
             <CardContent className="p-5">
-              <p className="text-sm text-slate-500">Ventas hoy</p>
-              <p className="mt-1 text-2xl font-bold">{formatMoney(Number(dashboardStats?.ventasHoy || 0))}</p>
+              <p className="text-sm text-muted-foreground">Ventas hoy</p>
+              <p className="mt-1 text-2xl font-bold">{formatMoney(ventasHoy)}</p>
               <div className="mt-3 flex items-center gap-2 text-xs text-emerald-700">
-                <DollarSign className="h-4 w-4" /> Ingreso diario
+                <DollarSign className="h-4 w-4" /> Comprobantes pagados de hoy
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-5">
-              <p className="text-sm text-slate-500">Comprobantes abiertos</p>
+              <p className="text-sm text-muted-foreground">Comprobantes abiertos</p>
               <p className="mt-1 text-2xl font-bold">{pedidosAbiertos}</p>
               <div className="mt-3 flex items-center gap-2 text-xs text-amber-700">
                 <ShoppingCart className="h-4 w-4" /> Mesas en consumo
@@ -117,19 +204,19 @@ export const Dashboard: React.FC = () => {
           </Card>
           <Card>
             <CardContent className="p-5">
-              <p className="text-sm text-slate-500">Reservas confirmadas</p>
-              <p className="mt-1 text-2xl font-bold">{reservasConfirmadas}</p>
+              <p className="text-sm text-muted-foreground">Reservas confirmadas</p>
+              <p className="mt-1 text-2xl font-bold">{reservasConfirmadasHoy}</p>
               <div className="mt-3 flex items-center gap-2 text-xs text-blue-700">
-                <Calendar className="h-4 w-4" /> Reservas pagadas
+                <Calendar className="h-4 w-4" /> Verificadas hoy
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-5">
-              <p className="text-sm text-slate-500">Stock crítico</p>
-              <p className="mt-1 text-2xl font-bold">{stockCritico}</p>
+              <p className="text-sm text-muted-foreground">Insumos con stock ≤ 5</p>
+              <p className="mt-1 text-2xl font-bold">{stockCriticoInsumos}</p>
               <div className="mt-3 flex items-center gap-2 text-xs text-rose-700">
-                <AlertTriangle className="h-4 w-4" /> Productos con stock ≤ 3
+                <AlertTriangle className="h-4 w-4" /> Control de reposición
               </div>
             </CardContent>
           </Card>
@@ -155,7 +242,7 @@ export const Dashboard: React.FC = () => {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2"><Users className="h-5 w-5" />Mix por categorías</CardTitle>
+              <CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5" />Mix por categorías</CardTitle>
             </CardHeader>
             <CardContent>
               <ResponsiveContainer width="100%" height={280}>
@@ -178,18 +265,18 @@ export const Dashboard: React.FC = () => {
             </CardHeader>
             <CardContent className="grid grid-cols-1 gap-3 md:grid-cols-3">
               <div className="rounded-xl border p-4">
-                <p className="text-sm text-slate-500">Reservas pendientes</p>
-                <p className="text-2xl font-bold text-amber-600">{reservasPendientes}</p>
+                <p className="text-sm text-muted-foreground">Reservas pagadas hoy</p>
+                <p className="text-2xl font-bold text-amber-600">{reservasPagadasHoy}</p>
                 <Button asChild variant="link" className="h-auto p-0 text-[#8B4513]"><Link to="/admin/reportes">Ver detalle</Link></Button>
               </div>
               <div className="rounded-xl border p-4">
-                <p className="text-sm text-slate-500">Ítems comida</p>
-                <p className="text-2xl font-bold text-emerald-700">{productos.filter((p) => p.categoria?.id === 1).length}</p>
+                <p className="text-sm text-muted-foreground">Ítems comida</p>
+                <p className="text-2xl font-bold text-emerald-700">{itemsComidaHoy}</p>
                 <ChefHat className="mt-2 h-4 w-4 text-emerald-700" />
               </div>
               <div className="rounded-xl border p-4">
-                <p className="text-sm text-slate-500">Ítems bebida</p>
-                <p className="text-2xl font-bold text-sky-700">{productos.filter((p) => [2, 3, 4].includes(p.categoria?.id || 0)).length}</p>
+                <p className="text-sm text-muted-foreground">Ítems bebida</p>
+                <p className="text-2xl font-bold text-sky-700">{itemsBebidaHoy}</p>
                 <Wine className="mt-2 h-4 w-4 text-sky-700" />
               </div>
             </CardContent>
@@ -200,8 +287,8 @@ export const Dashboard: React.FC = () => {
               <CardTitle>Alertas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
-              <div className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">Stock crítico: <strong>{stockCritico}</strong> productos.</div>
-              <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">Reservas esperando pago: <strong>{reservasPendientes}</strong>.</div>
+              <div className="rounded-lg bg-rose-50 p-3 text-sm text-rose-700">Stock crítico: <strong>{alertStockCriticoProductos}</strong> productos (≤ 10).</div>
+              <div className="rounded-lg bg-amber-50 p-3 text-sm text-amber-700">Reservas verificadas hoy: <strong>{reservasVerificadasHoy}</strong>.</div>
               <Badge className="bg-slate-900">Monitoreo activo</Badge>
             </CardContent>
           </Card>

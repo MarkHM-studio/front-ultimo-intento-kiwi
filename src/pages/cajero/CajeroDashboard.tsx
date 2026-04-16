@@ -57,6 +57,15 @@ export const CajeroDashboard: React.FC = () => {
 
   const comprobantesAbiertos = comprobantes.filter(c => c.estado === 'ABIERTO');
 
+  const getSubtotal = (comprobante: any) => {
+    const subtotal = Number(comprobante.subtotal ?? comprobante.subTotal ?? 0);
+    if (subtotal > 0) return subtotal;
+    const total = Number(comprobante.total || 0);
+    const igv = Number(comprobante.igv ?? comprobante.IGV ?? 0);
+    const computed = total - igv;
+    return computed > 0 ? computed : 0;
+  };
+
   const handleVerComprobante = async (comprobanteId: number) => {
     const comprobante = comprobantes.find(c => c.id === comprobanteId);
     if (!comprobante) return;
@@ -228,7 +237,7 @@ export const CajeroDashboard: React.FC = () => {
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500">Subtotal:</span>
-                          <span>S/ {(comprobante.subtotal || 0).toFixed(2)}</span>
+                          <span>S/ {getSubtotal(comprobante).toFixed(2)}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className="text-gray-500">IGV:</span>

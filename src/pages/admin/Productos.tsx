@@ -58,15 +58,15 @@ export const Productos: React.FC = () => {
         onSearch={setSearch}
         onCreate={() => setOpen(true)}
         filters={(
-          <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={categoriaFilter} onChange={(e) => setCategoriaFilter(Number(e.target.value))}>
+          <select className="h-10 rounded-md border border-input px-3 text-sm" value={categoriaFilter} onChange={(e) => setCategoriaFilter(Number(e.target.value))}>
             <option value={0}>Todas las categorías</option>
             {categorias.map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}
           </select>
         )}
       >
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Producto</th>
                 <th className="px-4 py-3 text-left">Categoría</th>
@@ -78,8 +78,8 @@ export const Productos: React.FC = () => {
             </thead>
             <tbody>
               {paginatedData.map((product) => (
-                <tr key={product.id} className="even:bg-slate-50/30">
-                  <td className="px-4 py-3 font-medium">{product.nombre}<div className="text-xs text-slate-500">Marca: {product.marca?.nombre || 'Sin marca'}</div></td>
+                <tr key={product.id} className="even:bg-muted/30">
+                  <td className="px-4 py-3 font-medium">{product.nombre}<div className="text-xs text-muted-foreground">Marca: {product.marca?.nombre || 'Sin marca'}</div></td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getCategoryClass(product.categoria?.id, product.categoria?.nombre)}`}>
                       {product.categoria?.nombre || '-'}
@@ -141,7 +141,7 @@ export const Productos: React.FC = () => {
               onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })}
             />
             <select
-              className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+              className="h-10 rounded-md border border-input px-3 text-sm"
               value={form.categoriaId}
               onChange={(e) => {
                 const categoriaId = Number(e.target.value);
@@ -158,7 +158,7 @@ export const Productos: React.FC = () => {
               {categorias.filter((category) => category.id <= 4).map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}
             </select>
             <select
-              className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+              className="h-10 rounded-md border border-input px-3 text-sm"
               value={form.marcaId || 0}
               disabled={PREPARED_CATEGORY_IDS.includes(form.categoriaId)}
               onChange={(e) => setForm({ ...form, marcaId: Number(e.target.value) || undefined })}

@@ -44,9 +44,9 @@ export const Marcas: React.FC = () => {
         onSearch={setSearch}
         onCreate={() => setOpen(true)}
       >
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Marca</th>
                 <th className="px-4 py-3 text-left">Fecha creación</th>
@@ -56,7 +56,7 @@ export const Marcas: React.FC = () => {
             </thead>
             <tbody>
               {paginatedData.map((brand) => (
-                <tr key={brand.id} className="even:bg-slate-50/30">
+                <tr key={brand.id} className="even:bg-muted/30">
                   <td className="px-4 py-3 font-medium">{brand.nombre}</td>
                   <td className="px-4 py-3">{formatDate(brand.fechaHoraRegistro)}</td>
                   <td className="px-4 py-3">{formatDate(brand.fechaHoraActualizacion || brand.fechaHoraRegistro)}</td>

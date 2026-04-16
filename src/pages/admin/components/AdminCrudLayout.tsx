@@ -21,7 +21,7 @@ export const AdminCrudLayout = ({ title, subtitle, search, onSearch, filters, on
         <p className="mt-1 text-sm text-white/80">{subtitle}</p>
       </section>
 
-      <section className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-slate-100">
+      <section className="rounded-2xl bg-card p-4 shadow-sm ring-1 ring-border/50">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-1 flex-col gap-3 md:flex-row">
             <div className="relative flex-1">

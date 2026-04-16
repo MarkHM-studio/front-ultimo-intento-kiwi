@@ -23,11 +23,11 @@ export const TablePagination: React.FC<TablePaginationProps> = ({
   const to = Math.min(currentPage * pageSize, totalItems);
 
   return (
-    <div className="flex flex-col items-start justify-between gap-3 border-t border-slate-100 px-4 py-3 text-sm text-slate-600 md:flex-row md:items-center">
+    <div className="flex flex-col items-start justify-between gap-3 border-t border-border/50 px-4 py-3 text-sm text-muted-foreground md:flex-row md:items-center">
       <div className="flex items-center gap-2">
         <span>Mostrando {from} - {to} de {totalItems}</span>
         <select
-          className="h-9 rounded-md border border-slate-200 px-2 text-sm"
+          className="h-9 rounded-md border border-input px-2 text-sm"
           value={pageSize}
           onChange={(event) => onPageSizeChange(Number(event.target.value))}
         >

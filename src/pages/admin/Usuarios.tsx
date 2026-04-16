@@ -76,23 +76,23 @@ export const Usuarios: React.FC = () => {
         filters={(
           <div className="flex gap-2">
             <select
-              className="h-10 rounded-md border border-slate-200 px-3 text-sm"
+              className="h-10 rounded-md border border-input px-3 text-sm"
               value={roleFilter}
               onChange={(event) => setRoleFilter(Number(event.target.value))}
             >
               <option value={0}>Todos los roles</option>
               {ROLES.map((role) => <option key={role.id} value={role.id}>{role.nombre}</option>)}
             </select>
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'ACTIVO' | 'INACTIVO')}>
+            <select className="h-10 rounded-md border border-input px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'ACTIVO' | 'INACTIVO')}>
               <option value="ACTIVO">ACTIVOS</option>
               <option value="INACTIVO">INACTIVOS</option>
             </select>
           </div>
         )}
       >
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Usuario</th>
                 <th className="px-4 py-3 text-left">Rol</th>
@@ -102,7 +102,7 @@ export const Usuarios: React.FC = () => {
             </thead>
            <tbody>
               {paginatedData.map((user: any) => (
-                <tr key={user.id} className="bg-white text-slate-700 even:bg-slate-50/30">
+                <tr key={user.id} className="bg-card text-foreground even:bg-muted/30">
                   <td className="px-4 py-3 font-medium">{user.username}</td>
                   <td className="px-4 py-3">{user.rol?.nombre || user.rolNombre || '-'}</td>
                   <td className="px-4 py-3">{user.estado}</td>
@@ -155,11 +155,11 @@ export const Usuarios: React.FC = () => {
             <Input placeholder="Username" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
             <div className="relative">
               <Input type={showPassword ? 'text' : 'password'} placeholder={editingId ? 'Contraseña del usuario' : 'Password'} value={form.password || ''} onChange={(e) => setForm({ ...form, password: e.target.value })} />
-              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500" onClick={() => setShowPassword((prev) => !prev)}>
+              <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowPassword((prev) => !prev)}>
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
-            <select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" value={form.rolId} onChange={(e) => setForm({ ...form, rolId: Number(e.target.value) })}>
+            <select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={form.rolId} onChange={(e) => setForm({ ...form, rolId: Number(e.target.value) })}>
               {ROLES.map((role) => <option key={role.id} value={role.id}>{role.nombre}</option>)}
             </select>
             <DialogFooter>

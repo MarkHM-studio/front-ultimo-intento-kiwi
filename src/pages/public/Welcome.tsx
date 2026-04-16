@@ -59,8 +59,8 @@ export const Welcome: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FDF8F3]">
-      <header className="bg-white shadow-sm sticky top-0 z-50">
+    <div className="welcome-page min-h-screen bg-background text-foreground">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/95 shadow-sm backdrop-blur">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ export const Welcome: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full mb-6">
+              <div className="inline-flex items-center gap-2 bg-card/20 px-4 py-2 rounded-full mb-6">
                 <Star className="w-4 h-4 text-[#D4AF37]" />
                 <span className="text-sm font-medium">Desde 2021</span>
               </div>
@@ -110,7 +110,7 @@ export const Welcome: React.FC = () => {
                 <Button
                   size="lg"
                   onClick={() => navigate('/login')}
-                  className="bg-[#D4AF37] text-[#1F2937] hover:bg-[#B8962F] font-semibold"
+                  className="bg-[#D4AF37] text-foreground hover:bg-[#B8962F] font-semibold"
                 >
                   <Users className="w-5 h-5 mr-2" />
                   Soy Cliente
@@ -119,7 +119,7 @@ export const Welcome: React.FC = () => {
                   size="lg"
                   variant="outline"
                   onClick={() => navigate('/login')}
-                  className="border-white text-white hover:bg-white hover:text-[#8B4513]"
+                  className="border-white text-white hover:bg-card hover:text-[#8B4513]"
                 >
                   <ChefHat className="w-5 h-5 mr-2" />
                   Soy Trabajador
@@ -127,7 +127,7 @@ export const Welcome: React.FC = () => {
               </div>
             </div>
             <div className="hidden md:block">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+               <div className="bg-card/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
                 <div className="grid grid-cols-2 gap-6">
                   <div className="text-center">
                     <div className="text-4xl font-bold text-[#D4AF37]">3+</div>
@@ -152,7 +152,7 @@ export const Welcome: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-white py-6 shadow-sm">
+      <section className="bg-card py-6 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-center gap-3 justify-center md:justify-start">
@@ -160,8 +160,8 @@ export const Welcome: React.FC = () => {
                 <Clock className="w-5 h-5 text-[#8B4513]" />
               </div>
               <div>
-                <div className="font-semibold text-[#1F2937]">Horario de Atención</div>
-                <div className="text-sm text-[#6B7280]">5:00 PM - 2:00 AM</div>
+                <div className="font-semibold text-foreground">Horario de Atención</div>
+                <div className="text-sm text-muted-foreground">5:00 PM - 2:00 AM</div>
               </div>
             </div>
             <div className="flex items-center gap-3 justify-center md:justify-start">
@@ -169,8 +169,8 @@ export const Welcome: React.FC = () => {
                 <MapPin className="w-5 h-5 text-[#8B4513]" />
               </div>
               <div>
-                <div className="font-semibold text-[#1F2937]">Ubicación</div>
-                <div className="text-sm text-[#6B7280]">Jr. Chiclayo 388, Chosica</div>
+                <div className="font-semibold text-foreground">Ubicación</div>
+                <div className="text-sm text-muted-foreground">Jr. Chiclayo 388, Chosica</div>
               </div>
             </div>
             <div className="flex items-center gap-3 justify-center md:justify-start">
@@ -178,8 +178,8 @@ export const Welcome: React.FC = () => {
                 <Phone className="w-5 h-5 text-[#8B4513]" />
               </div>
               <div>
-                <div className="font-semibold text-[#1F2937]">Contacto</div>
-                <div className="text-sm text-[#6B7280]">987 654 321</div>
+                <div className="font-semibold text-foreground">Contacto</div>
+                <div className="text-sm text-muted-foreground">987 654 321</div>
               </div>
             </div>
           </div>
@@ -189,10 +189,10 @@ export const Welcome: React.FC = () => {
       <section className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[#1F2937] mb-4">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
               ¿Por qué elegir <span className="text-[#8B4513]">La Pituca</span>?
             </h2>
-            <p className="text-[#6B7280] max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto">
               Ofrecemos la mejor experiencia gastronómica con productos de calidad y un servicio excepcional.
             </p>
           </div>
@@ -200,13 +200,13 @@ export const Welcome: React.FC = () => {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow text-center"
+                className="rounded-xl border border-border bg-card p-6 text-center shadow-sm transition-shadow hover:shadow-md"
               >
                 <div className="bg-[#8B4513]/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 text-[#8B4513]">
                   {feature.icon}
                 </div>
-                <h3 className="font-semibold text-[#1F2937] mb-2">{feature.title}</h3>
-                <p className="text-sm text-[#6B7280]">{feature.description}</p>
+                <h3 className="font-semibold text-foreground mb-2">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.description}</p>
               </div>
             ))}
           </div>
@@ -223,7 +223,7 @@ export const Welcome: React.FC = () => {
           <Button
             size="lg"
             onClick={() => navigate('/login')}
-            className="bg-[#D4AF37] text-[#1F2937] hover:bg-[#B8962F] font-semibold"
+            className="bg-[#D4AF37] text-foreground hover:bg-[#B8962F] font-semibold"
           >
             Comenzar Ahora
             <ChevronRight className="w-5 h-5 ml-2" />
@@ -231,22 +231,22 @@ export const Welcome: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="bg-card py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-[#1F2937] mb-4">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
               Lo que dicen nuestros <span className="text-[#8B4513]">clientes</span>
             </h2>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial) => (
-              <div key={testimonial.name} className="bg-[#FDF8F3] rounded-xl p-6 border border-[#8B4513]/10">
+              <div key={testimonial.name} className="rounded-xl border border-border bg-muted p-6">
                 <div className="flex gap-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
                     <Star key={`${testimonial.name}-${i}`} className="w-5 h-5 fill-[#D4AF37] text-[#D4AF37]" />
                   ))}
                 </div>
-                <p className="text-[#1F2937] mb-4 italic">"{testimonial.comment}"</p>
+                <p className="text-foreground mb-4 italic">"{testimonial.comment}"</p>
                 <div className="font-semibold text-[#8B4513]">{testimonial.name}</div>
               </div>
             ))}

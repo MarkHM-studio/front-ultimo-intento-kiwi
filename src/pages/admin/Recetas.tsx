@@ -118,15 +118,15 @@ export const Recetas: React.FC = () => {
         onSearch={setSearch}
         onCreate={() => setOpen(true)}
         filters={(
-          <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={productoFilter} onChange={(e) => setProductoFilter(Number(e.target.value))}>
+          <select className="h-10 rounded-md border border-input px-3 text-sm" value={productoFilter} onChange={(e) => setProductoFilter(Number(e.target.value))}>
             <option value={0}>Todos los productos</option>
             {productos.map((product) => <option key={product.id} value={product.id}>{product.nombre}</option>)}
           </select>
         )}
       >
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Producto</th>
                 <th className="px-4 py-3 text-left">Tipo</th>
@@ -136,7 +136,7 @@ export const Recetas: React.FC = () => {
             </thead>
              <tbody>
                {paginatedData.map((recipeGroup) => (
-                <tr key={recipeGroup.productoId} className="even:bg-slate-50/30">
+                <tr key={recipeGroup.productoId} className="even:bg-muted/30">
                   <td className="px-4 py-3 font-medium">{recipeGroup.productoNombre}</td>
                   <td className="px-4 py-3">
                     {(() => {
@@ -192,14 +192,14 @@ export const Recetas: React.FC = () => {
           </DialogHeader>
 
           <form onSubmit={submit} className="space-y-3">
-            <select className="h-10 w-full rounded-md border border-slate-200 px-3 text-sm" value={productoId} disabled={!!editingProductoId} onChange={(e) => setProductoId(Number(e.target.value))}>
+            <select className="h-10 w-full rounded-md border border-input px-3 text-sm" value={productoId} disabled={!!editingProductoId} onChange={(e) => setProductoId(Number(e.target.value))}>
               <option value={0}>Selecciona producto</option>
               {productos.map((product) => <option key={product.id} value={product.id}>{product.nombre}</option>)}
             </select>
 
             {detalles.map((detalle, index) => (
               <div key={index} className="grid gap-2 md:grid-cols-4">
-                <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={detalle.insumoId} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, insumoId: Number(e.target.value) } : item))}>
+                <select className="h-10 rounded-md border border-input px-3 text-sm" value={detalle.insumoId} onChange={(e) => setDetalles((previous) => previous.map((item, i) => i === index ? { ...item, insumoId: Number(e.target.value) } : item))}>
                   <option value={0}>Insumo</option>
                   {insumos.map((supply) => <option key={supply.id} value={supply.id}>{supply.nombre}</option>)}
                 </select>

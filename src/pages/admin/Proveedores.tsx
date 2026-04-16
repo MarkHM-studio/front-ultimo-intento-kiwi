@@ -48,16 +48,16 @@ export const Proveedores: React.FC = () => {
         onSearch={setSearch}
         onCreate={() => setOpen(true)}
         filters={(
-          <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <select className="h-10 rounded-md border border-input px-3 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="TODOS">Todos los estados</option>
             <option value="ACTIVO">Activo</option>
             <option value="INACTIVO">Inactivo</option>
           </select>
         )}
       >
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Proveedor</th>
                 <th className="px-4 py-3 text-left">RUC / Contacto</th>
@@ -67,9 +67,9 @@ export const Proveedores: React.FC = () => {
             </thead>
             <tbody>
               {paginatedData.map((provider) => (
-                <tr key={provider.id} className="even:bg-slate-50/30">
-                  <td className="px-4 py-3 font-medium">{provider.razonSocial}<div className="text-xs text-slate-500">{provider.correo}</div></td>
-                  <td className="px-4 py-3">{provider.ruc}<div className="text-xs text-slate-500">{provider.contacto} - {provider.telefono}</div></td>
+                <tr key={provider.id} className="even:bg-muted/30">
+                  <td className="px-4 py-3 font-medium">{provider.razonSocial}<div className="text-xs text-muted-foreground">{provider.correo}</div></td>
+                  <td className="px-4 py-3">{provider.ruc}<div className="text-xs text-muted-foreground">{provider.contacto} - {provider.telefono}</div></td>
                   <td className="px-4 py-3">{provider.estado}</td>
                   <td className="px-4 py-3 text-right">
                     <RowActions onEdit={() => {

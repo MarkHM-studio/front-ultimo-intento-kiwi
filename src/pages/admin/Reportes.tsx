@@ -38,13 +38,33 @@ export const Reportes: React.FC = () => {
     fetchReservas();
   }, [fetchUsuarios, fetchProductos, fetchInsumos, fetchComprobantes, fetchReservas]);
 
-  const normalizeDate = (value?: string) => (value || '').slice(0, 10);
+  const normalizeDate = (value?: string) => {
+    if (!value) return '';
+    const raw = String(value).trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(raw)) return raw.slice(0, 10);
+    const parsed = new Date(raw);
+    if (Number.isNaN(parsed.getTime())) return '';
+    const year = parsed.getFullYear();
+    const month = String(parsed.getMonth() + 1).padStart(2, '0');
+    const day = String(parsed.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   const isBetween = (value?: string) => {
     if (!filtroAplicado) return true;
     const current = normalizeDate(value);
     if (!current) return false;
     return current >= filtroAplicado.desde && current <= filtroAplicado.hasta;
   };
+
+  const getReservaDateForFilter = (reserva: any) =>
+    reserva.fechaReserva ||
+    reserva.fecha_reserva ||
+    reserva.fechaHoraVerificacionReserva ||
+    reserva.fechaVerificacionReserva ||
+    reserva.fechaHoraRegistro ||
+    reserva.fechaRegistro ||
+    reserva.fechaHoraActualizacion;
 
   const ventasRows = useMemo(() => (
     comprobantes
@@ -99,14 +119,15 @@ export const Reportes: React.FC = () => {
 
   const reservasRows = useMemo(() => (
     reservas
-      .filter((row: any) => isBetween(row.fechaReserva || row.fechaRegistro))
+      .filter((row: any) => isBetween(getReservaDateForFilter(row)))
       .map((row: any) => ({
         id: row.id,
-        fechaReserva: row.fechaReserva,
-        horaReserva: row.horaReserva,
+        fechaReserva: normalizeDate(row.fechaReserva || row.fecha_reserva || getReservaDateForFilter(row)) || '-',
+        horaReserva: row.horaReserva || row.hora_reserva || '-',
         estado: row.estado,
-        numPersonas: row.numPersonas,
-        usuarioId: row.usuarioId,
+        numPersonas: Number(row.numPersonas || row.num_personas || 0),
+        usuarioId: row.usuarioId || row.usuario?.id || '-',
+        fechaVerificacion: row.fechaHoraVerificacionReserva || row.fechaVerificacionReserva || '-',
       }))
   ), [reservas, filtroAplicado]);
 
@@ -177,10 +198,10 @@ export const Reportes: React.FC = () => {
           {reportCards.map((report) => {
             const reportData = datasets[report.key];
             return (
-              <Card key={report.key} className={`rounded-2xl border p-5 ${activeReport === report.key ? 'border-[#8B4513] ring-2 ring-[#8B4513]/20' : 'border-slate-200'}`}>
-                <p className="mb-1 text-base font-semibold text-slate-800">{report.title}</p>
-                <p className="text-xs text-slate-500">{report.subtitle}</p>
-                <p className="mt-2 text-xs text-slate-500">Registros: {reportData.length}</p>
+              <Card key={report.key} className={`rounded-2xl border p-5 ${activeReport === report.key ? 'border-[#8B4513] ring-2 ring-[#8B4513]/20' : 'border-border'}`}>
+                <p className="mb-1 text-base font-semibold text-foreground">{report.title}</p>
+                <p className="text-xs text-muted-foreground">{report.subtitle}</p>
+                <p className="mt-2 text-xs text-muted-foreground">Registros: {reportData.length}</p>
                 <div className="mt-3 space-y-2">
                   <Button variant="outline" className="w-full" onClick={() => setActiveReport(report.key)}>Ver detalle</Button>
                   <Button className="w-full bg-emerald-600 hover:bg-emerald-700" onClick={() => exportToExcel(report.key)}>
@@ -198,8 +219,8 @@ export const Reportes: React.FC = () => {
             <Button variant="outline" onClick={() => exportToExcel(activeReport)}><Download className="mr-2 h-4 w-4" />Exportar reporte activo</Button>
           </div>
           <div className="overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600">
+            <table className="admin-report-table w-full text-sm">
+              <thead className="bg-muted/60 text-muted-foreground">
                 <tr>
                   {Object.keys(datasets[activeReport][0] || { mensaje: 'Sin datos' }).map((column) => <th key={column} className="px-3 py-2 text-left">{column}</th>)}
                 </tr>

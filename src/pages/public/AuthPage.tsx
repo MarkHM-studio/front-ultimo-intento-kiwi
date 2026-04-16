@@ -252,11 +252,11 @@ export const AuthPage: React.FC = () => {
           <CardContent className="p-0">
             {(view === 'login' || view === 'register') && (
               <Tabs value={activeTab} onValueChange={(v) => { onAnyChange(); setActiveTab(v as 'login' | 'register'); setView(v as AuthView); navigate(v === 'login' ? '/login' : '/register'); }}>
-                <TabsList className="grid w-full grid-cols-2 rounded-none bg-[#FDF8F3]">
-                  <TabsTrigger value="login" className="data-[state=active]:bg-white data-[state=active]:text-[#8B4513] rounded-none py-4">
+                <TabsList className="grid w-full grid-cols-2 rounded-none bg-muted">
+                  <TabsTrigger value="login" className="rounded-none py-4 data-[state=active]:bg-card data-[state=active]:text-primary">
                     <LogIn className="w-4 h-4 mr-2" />Iniciar Sesión
                   </TabsTrigger>
-                  <TabsTrigger value="register" className="data-[state=active]:bg-white data-[state=active]:text-[#8B4513] rounded-none py-4">
+                  <TabsTrigger value="register" className="rounded-none py-4 data-[state=active]:bg-card data-[state=active]:text-primary">
                     <UserPlus className="w-4 h-4 mr-2" />Registrarse
                   </TabsTrigger>
                 </TabsList>

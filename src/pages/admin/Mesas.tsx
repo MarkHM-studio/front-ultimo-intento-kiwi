@@ -59,16 +59,16 @@ export const Mesas: React.FC = () => {
           onSearch={setSearch}
           onCreate={() => setOpen(true)}
           filters={(
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select className="h-10 rounded-md border border-input px-3 text-sm" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="TODOS">Todos los estados</option>
               <option value="OCUPADO">Ocupado</option>
               <option value="DESOCUPADO">Desocupado</option>
             </select>
           )}
         >
-          <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+          <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-slate-600">
+              <thead className="bg-muted/60 text-muted-foreground">
                 <tr>
                   <th className="px-4 py-3 text-left">Mesa</th>
                   <th className="px-4 py-3 text-left">Estado</th>
@@ -79,7 +79,7 @@ export const Mesas: React.FC = () => {
               </thead>
               <tbody>
                 {paginatedData.map((table) => (
-                  <tr key={table.id} className="even:bg-slate-50/30">
+                  <tr key={table.id} className="even:bg-muted/30">
                     <td className="px-4 py-3 font-medium">{table.nombre}</td>
                     <td className="px-4 py-3">{table.estado}</td>
                     <td className="px-4 py-3">{formatDate(table.fechaHoraRegistro)}</td>
@@ -115,7 +115,7 @@ export const Mesas: React.FC = () => {
         <Card className="rounded-2xl p-4">
           <h3 className="mb-3 text-base font-semibold">Mesas ocupadas</h3>
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 text-left">Mesa</th>
                 <th className="px-4 py-2 text-left">Grupo</th>
@@ -124,7 +124,7 @@ export const Mesas: React.FC = () => {
             </thead>
             <tbody>
               {mesasOcupadas.map((table: any) => (
-                <tr key={table.mesaId} className="even:bg-slate-50/30">
+                <tr key={table.mesaId} className="even:bg-muted/30">
                   <td className="px-4 py-2">{table.nombre || table.mesaNombre}</td>
                   <td className="px-4 py-2">Grupo #{table.grupoId}</td>
                   <td className="px-4 py-2">Comprobante #{table.comprobanteId}</td>

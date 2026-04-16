@@ -83,6 +83,9 @@ export function AccessibilityPanel() {
               );
             })}
           </div>
+          <p className="text-xs text-muted-foreground">
+            El modo Daltonismo usa una paleta azul/naranja para evitar combinaciones rojo/verde.
+          </p>
         </section>
 
         <section className="space-y-3" aria-label="Escalado de tipografía">

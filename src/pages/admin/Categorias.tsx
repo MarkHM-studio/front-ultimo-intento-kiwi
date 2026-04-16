@@ -57,9 +57,9 @@ export const Categorias: React.FC = () => {
         onSearch={setSearch}
         onCreate={() => setOpen(true)}
       >
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Categoría</th>
                 <th className="px-4 py-3 text-left">Fecha creación</th>
@@ -69,7 +69,7 @@ export const Categorias: React.FC = () => {
             </thead>
             <tbody>
               {paginatedData.map((category) => (
-                <tr key={category.id} className="even:bg-slate-50/30">
+                 <tr key={category.id} className="even:bg-muted/30">
                   <td className="px-4 py-3 font-medium">
                     <span className={`rounded-full px-2 py-1 text-xs font-semibold ${getCategoryClass(category.id, category.nombre)}`}>{category.nombre}</span>
                   </td>

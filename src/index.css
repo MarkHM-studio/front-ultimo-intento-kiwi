@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-
 :root {
   --app-font-scale: 1;
 }
@@ -42,14 +41,25 @@ html.theme-high-contrast {
 }
 
 html.theme-colorblind {
+  --background: 210 20% 98%;
+  --foreground: 224 27% 14%;
+  --card: 0 0% 100%;
+  --card-foreground: 224 27% 14%;
   --primary: 217 91% 45%;
   --primary-foreground: 0 0% 100%;
+  --secondary: 214 32% 91%;
+  --secondary-foreground: 224 27% 14%;
+  --muted: 213 27% 92%;
+  --muted-foreground: 217 19% 35%;
   --accent: 32 100% 50%;
   --accent-foreground: 0 0% 10%;
   --ring: 217 91% 45%;
   --destructive: 345 78% 47%;
   --destructive-foreground: 0 0% 100%;
+  --sidebar-primary: 217 91% 45%;
+  --sidebar-accent: 32 100% 50%;
 }
+
 
 html.reduce-motion *,
 html.reduce-motion *::before,
@@ -245,4 +255,28 @@ html.reduce-motion *::after {
 :focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 2px;
+}
+
+
+html[data-theme='high-contrast'] .welcome-page,
+html[data-theme='dark'] .welcome-page {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+html[data-theme='high-contrast'] .welcome-page .bg-card,
+html[data-theme='dark'] .welcome-page .bg-card {
+  background-color: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+}
+
+html[data-theme='high-contrast'] .welcome-page .text-muted-foreground,
+html[data-theme='dark'] .welcome-page .text-muted-foreground {
+  color: hsl(var(--muted-foreground));
+}
+
+html[data-theme='high-contrast'] .admin-report-table thead,
+html[data-theme='dark'] .admin-report-table thead {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--muted-foreground));
 }

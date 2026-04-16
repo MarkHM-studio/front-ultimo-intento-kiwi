@@ -75,15 +75,15 @@ export const Clientes: React.FC = () => {
         onSearch={setSearch}
         onCreate={() => setOpen(true)}
         filters={(
-          <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'ACTIVO' | 'INACTIVO')}>
+          <select className="h-10 rounded-md border border-input px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as 'ACTIVO' | 'INACTIVO')}>
             <option value="ACTIVO">ACTIVOS</option>
             <option value="INACTIVO">INACTIVOS</option>
           </select>
         )}
       >
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Cliente</th>
                 <th className="px-4 py-3 text-left">Contacto</th>
@@ -93,9 +93,9 @@ export const Clientes: React.FC = () => {
             </thead>
             <tbody>
               {paginatedData.map((client: any) => (
-                <tr key={client.id} className="even:bg-slate-50/30">
+                <tr key={client.id} className="even:bg-muted/30">
                   <td className="px-4 py-3 font-medium">{client.nombre} {client.apellido}</td>
-                  <td className="px-4 py-3">{client.correo}<div className="text-xs text-slate-500">{client.telefono}</div></td>
+                  <td className="px-4 py-3">{client.correo}<div className="text-xs text-muted-foreground">{client.telefono}</div></td>
                   <td className="px-4 py-3">{client.distrito?.nombre || client.distrito || '-'}</td>
                   <td className="px-4 py-3 text-right">
                     <RowActions
@@ -150,7 +150,7 @@ export const Clientes: React.FC = () => {
             <Input type="date" value={form.fechaNacimiento} onChange={(e) => setForm({ ...form, fechaNacimiento: e.target.value })} />
             <Input placeholder="Teléfono" value={form.telefono} onChange={(e) => setForm({ ...form, telefono: e.target.value })} />
             <Input placeholder="Correo" value={form.correo} onChange={(e) => setForm({ ...form, correo: e.target.value })} />
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.distritoId} onChange={(e) => setForm({ ...form, distritoId: Number(e.target.value) })}>
+            <select className="h-10 rounded-md border border-input px-3 text-sm" value={form.distritoId} onChange={(e) => setForm({ ...form, distritoId: Number(e.target.value) })}>
               {distritos.length === 0 && <option value={form.distritoId}>Cargando distritos...</option>}
               {distritos.map((distrito) => (
                 <option key={distrito.id} value={distrito.id}>

@@ -145,7 +145,7 @@ export const ClienteDashboard: React.FC = () => {
               </div>
               <div className="flex flex-wrap gap-2">
                 {misReservas.slice(0, 3).map((reserva) => (
-                  <Badge key={reserva.id} variant="outline" className="bg-white">
+                  <Badge key={reserva.id} variant="outline" className="bg-card text-foreground">
                     {reserva.fechaReserva} {reserva.horaReserva} ({reserva.mesasIds?.length || 0} mesa(s))
                   </Badge>
                 ))}
@@ -169,7 +169,7 @@ export const ClienteDashboard: React.FC = () => {
                     {horariosDisponibles.length > 0 ? (
                       horariosDisponibles.map((h) => <SelectItem key={h} value={h}>{h}</SelectItem>)
                     ) : (
-                      <div className="px-3 py-2 text-sm text-slate-500">No hay horarios disponibles para hoy.</div>
+                      <div className="px-3 py-2 text-sm text-muted-foreground">No hay horarios disponibles para hoy.</div>
                     )}
                   </SelectContent>
                 </Select>
@@ -193,8 +193,8 @@ export const ClienteDashboard: React.FC = () => {
             </div>
 
             {mesasDisponibles.length === 0 ? (
-              <div className="py-12 text-center text-gray-500">
-                <TableIcon className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+              <div className="py-12 text-center text-muted-foreground">
+                <TableIcon className="mx-auto mb-4 h-16 w-16 text-muted-foreground" />
                 <p>No hay mesas disponibles para este horario</p>
               </div>
             ) : (
@@ -206,12 +206,12 @@ export const ClienteDashboard: React.FC = () => {
                     className={`rounded-xl border-2 p-4 transition-all ${
                       selectedMesas.includes(mesa.mesaId)
                         ? 'border-[#8B4513] bg-[#8B4513] text-white'
-                        : 'border-gray-200 bg-white hover:border-green-400'
+                        : 'border-border bg-card text-foreground hover:border-primary hover:bg-muted/40'
                     }`}
                   >
-                    <TableIcon className={`mx-auto mb-2 h-6 w-6 ${selectedMesas.includes(mesa.mesaId) ? 'text-white' : 'text-gray-400'}`} />
+                    <TableIcon className={`mx-auto mb-2 h-6 w-6 ${selectedMesas.includes(mesa.mesaId) ? 'text-white' : 'text-muted-foreground'}`} />
                     <p className="text-sm font-medium">{mesa.nombre || mesa.mesaNombre || `Mesa ${mesa.mesaId}`}</p>
-                    <p className={`text-xs ${selectedMesas.includes(mesa.mesaId) ? 'text-white/80' : 'text-gray-500'}`}>
+                    <p className={`text-xs ${selectedMesas.includes(mesa.mesaId) ? 'text-white/80' : 'text-muted-foreground'}`}>
                       {(mesa.capacidad || 3)} pers.
                     </p>
                   </button>
@@ -233,11 +233,11 @@ export const ClienteDashboard: React.FC = () => {
           <DialogContent>
             <DialogHeader><DialogTitle>Confirmar Reserva</DialogTitle></DialogHeader>
             <div className="space-y-4">
-              <div className="space-y-2 rounded-lg bg-gray-50 p-4">
-                <p><span className="text-gray-500">Fecha:</span> {selectedDate}</p>
-                <p><span className="text-gray-500">Horario:</span> {selectedHora} - {horaFin}</p>
-                <p><span className="text-gray-500">Mesas:</span> {selectedMesas.length}</p>
-                <p><span className="text-gray-500">Personas:</span> {numeroPersonas}</p>
+              <div className="space-y-2 rounded-lg bg-muted p-4">
+                <p><span className="text-muted-foreground">Fecha:</span> {selectedDate}</p>
+                <p><span className="text-muted-foreground">Horario:</span> {selectedHora} - {horaFin}</p>
+                <p><span className="text-muted-foreground">Mesas:</span> {selectedMesas.length}</p>
+                <p><span className="text-muted-foreground">Personas:</span> {numeroPersonas}</p>
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>Cancelar</Button>

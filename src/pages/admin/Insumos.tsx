@@ -54,7 +54,7 @@ export const Insumos: React.FC = () => {
         onSearch={setSearch}
         onCreate={() => setOpen(true)}
         filters={(
-          <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={unitFilter} onChange={(e) => setUnitFilter(e.target.value)}>
+          <select className="h-10 rounded-md border border-input px-3 text-sm" value={unitFilter} onChange={(e) => setUnitFilter(e.target.value)}>
             <option value="TODOS">Todas las unidades</option>
             <option value="KG">KG</option>
             <option value="L">L</option>
@@ -62,9 +62,9 @@ export const Insumos: React.FC = () => {
           </select>
         )}
       >
-        <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100">
+        <section className="overflow-hidden rounded-2xl bg-card shadow-sm ring-1 ring-border/50">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted/60 text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Insumo</th>
                 <th className="px-4 py-3 text-left">Categoría</th>
@@ -76,8 +76,8 @@ export const Insumos: React.FC = () => {
             </thead>
             <tbody>
               {paginatedData.map((supply) => (
-                <tr key={supply.id} className="even:bg-slate-50/30">
-                  <td className="px-4 py-3 font-medium">{supply.nombre}<div className="text-xs text-slate-500">Marca: {supply.marca?.nombre || 'Sin marca'}</div></td>
+                <tr key={supply.id} className="even:bg-muted/30">
+                  <td className="px-4 py-3 font-medium">{supply.nombre}<div className="text-xs text-muted-foreground">Marca: {supply.marca?.nombre || 'Sin marca'}</div></td>
                   <td className="px-4 py-3">
                     {(() => {
                       const category = categorias.find((cat) => cat.id === supply.categoriaId);
@@ -124,11 +124,11 @@ export const Insumos: React.FC = () => {
             <Input type="number" step="0.01" placeholder="Precio" value={form.precio} onChange={(e) => setForm({ ...form, precio: Number(e.target.value) })} />
             <Input type="number" placeholder="Stock" value={form.stock} onChange={(e) => setForm({ ...form, stock: Number(e.target.value) })} />
             <Input placeholder="Unidad de medida" value={form.unidadMedida} onChange={(e) => setForm({ ...form, unidadMedida: e.target.value.toUpperCase() })} />
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.marcaId || 0} onChange={(e) => setForm({ ...form, marcaId: Number(e.target.value) || undefined })}>
+            <select className="h-10 rounded-md border border-input px-3 text-sm" value={form.marcaId || 0} onChange={(e) => setForm({ ...form, marcaId: Number(e.target.value) || undefined })}>
               <option value={0}>Sin marca</option>
               {marcas.map((brand) => <option key={brand.id} value={brand.id}>{brand.nombre}</option>)}
             </select>
-            <select className="h-10 rounded-md border border-slate-200 px-3 text-sm" value={form.categoriaId || 0} onChange={(e) => setForm({ ...form, categoriaId: Number(e.target.value) || 0 })}>
+            <select className="h-10 rounded-md border border-input px-3 text-sm" value={form.categoriaId || 0} onChange={(e) => setForm({ ...form, categoriaId: Number(e.target.value) || 0 })}>
               <option value={0}>Selecciona una categoría</option>
               {categorias.filter((category) => category.id >= 5).map((category) => <option key={category.id} value={category.id}>{category.nombre}</option>)}
             </select>
