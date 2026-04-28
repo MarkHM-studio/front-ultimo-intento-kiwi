@@ -1,3 +1,55 @@
+# 🧠 Documentación técnica - Frontend
+
+## ⚙️ Stack utilizado
+
+- React 19
+- Vite
+- TypeScript
+- Tailwind CSS (con shadcn/ui)
+- Zustand (estado global)
+- Axios (cliente HTTP)
+- React Hook Form + Zod
+
+---
+
+## 📦 Componentes UI
+
+El proyecto utiliza una librería basada en Radix UI con componentes reutilizables como:
+
+- Button, Input, Dialog, Table
+- Tooltip, Tabs, Dropdown
+- Sidebar, Navigation Menu
+
+---
+
+## 📂 Estructura relevante
+
+- `src/components/` → Componentes reutilizables
+- `src/pages/` → Vistas por rol
+- `src/services/` → Comunicación con backend
+- `src/stores/` → Estado global (Zustand)
+- `src/hooks/` → Hooks personalizados
+- `src/types/` → Tipado global
+
+---
+
+## 🔗 Integración con backend
+
+- Uso de Axios con interceptores
+- Manejo de JWT desde sessionStorage
+- Soporte para entorno con ngrok
+
+---
+
+## 📌 Notas
+
+- El frontend depende del backend activo
+- Manejo de roles desde el login
+
+---
+
+## 📄 Información adicional
+
 Using Node.js 20, Tailwind CSS v3.4.19, and Vite v7.2.4
 
 Tailwind CSS has been set up with the shadcn theme

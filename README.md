@@ -1,73 +1,199 @@
-# React + TypeScript + Vite
+# 🍽️ Sistema Web de Inventario, Ventas y Reservas – Restobar "La Pituca"
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web fullstack desarrollada para la gestión integral de un restobar, incluyendo control de inventario, ventas, reservas y autenticación de usuarios por roles.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 📦 Repositorios
 
-## React Compiler
+- 🔙 Backend: <https://github.com/MarkHM-studio/La-Pituca.git>
+- 🔜 Frontend: <https://github.com/MarkHM-studio/restobar-lapituca.git>
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🚀 Características principales
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- Gestión de inventario (entradas y salidas de productos)
+- Registro y control de ventas
+- Sistema de reservas online
+- Autenticación con JWT y OAuth2 (Google)
+- Integración de pagos con Mercado Pago (sandbox)
+- Exportación de datos a Excel
+- Sistema multi-rol (admin, cliente, mozo, cajero, etc.)
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 👥 Roles del sistema
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Administrador:** gestión del inventario y del sistema  
+- **Cliente:** reservas y visualización  
+- **Mozo:** gestión de pedidos  
+- **Cajero:** registro de pagos  
+- **Almacenero:** entradas de productos e insumos 
+- **Cocinero / Bartender:** preparación de pedidos  
+- **Recepcionista:** gestión de reservas  
+
+---
+
+## 🧱 Arquitectura
+
+Arquitectura cliente-servidor basada en capas:
+
+### Backend
+Controller → Service → Repository → Entity → DTO
+
+### Frontend
+Componentes → Páginas → Servicios → Estado global (Zustand)
+
+---
+
+## 🛠️ Tecnologías utilizadas
+
+### 🔙 Backend
+- Java 17  
+- Spring Boot  
+- Spring Security (JWT + OAuth2)  
+- Spring Data JPA  
+- PostgreSQL / MySQL / H2  
+- Mercado Pago SDK  
+
+### 🔜 Frontend
+- React 19 + Vite  
+- TypeScript  
+- Zustand (gestión de estado)  
+- Axios (HTTP client)  
+- React Hook Form + Zod  
+- Tailwind CSS + Radix UI  
+- Recharts  
+
+### ⚙️ Herramientas
+- Git & GitHub  
+- Postman / JMeter  
+- JUnit / Mockito  
+
+---
+
+## 📂 Estructura del proyecto
+
+### 🔙 Backend
+
+- `controller/` → Endpoints REST  
+- `service/` → Lógica de negocio  
+- `repository/` → Acceso a datos  
+- `entity/` → Modelos de base de datos  
+- `dto/` → Contratos de API  
+- `security/` → JWT y OAuth2  
+
+### 🔜 Frontend
+
+- `components/` → Componentes reutilizables  
+- `pages/` → Vistas por rol  
+- `services/` → Consumo de API  
+- `stores/` → Estado global (Zustand)  
+- `hooks/` → Hooks personalizados  
+- `types/` → Tipado global  
+
+---
+
+## 🖼️ Vista del sistema
+
+### Página pública
+
+![Bienvenida](./assets/bienvenida1.png)  
+![Bienvenida](./assets/bienvenida2.png)  
+
+### Sistema interno
+
+![Login](./assets/login.png)  
+![Admin](./assets/menu_admin.png)  
+![Almacenero](./assets/menu_almacenero.png)  
+![Mozo](./assets/menu_mozo.png)  
+![Bartender](./assets/menu_bartender.png)  
+![Cocinero](./assets/menu_cocinero.png)  
+![Cajero](./assets/menu_cajero.png)  
+![Cliente](./assets/menu_cliente1.png)  
+![Cliente-Reservas](./assets/menu_cliente2.png)  
+![Cliente-Perfil](./assets/menu_cliente3.png)  
+![Recepcionista](./assets/menu_recepcionista.png)  
+
+---
+
+## ⚙️ Instalación y ejecución
+
+### 🔙 Backend
+
+```bash
+git clone https://github.com/MarkHM-studio/La-Pituca.git
+cd backend
+./mvnw clean install
+./mvnw spring-boot:run
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+#### ⚙️ Configuración Backend
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- Crear base de datos en PostgreSQL  
+- Configurar credenciales en `application.properties` o variables de entorno:
+  - JWT secret  
+  - OAuth2 (Google)  
+  - Mercado Pago  
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 🔜 Frontend
+
+```bash
+git clone https://github.com/MarkHM-studio/restobar-lapituca.git
+cd frontend
+npm install
+npm run dev
 ```
+
+---
+
+## 📄 Documentación adicional
+
+- ⚙️ Instalación detallada: ver `SETUP.md`
+- 🧠 Documentación técnica: ver `INFO.md`
+
+---
+
+## 🔐 Seguridad
+
+ - Autenticación mediante JWT
+ - Login con Google (OAuth2)
+ - Protección de rutas por roles
+ - Manejo global de excepciones
+
+ ---
+
+## 📚 Aprendizajes
+
+ - Implementación de arquitectura en capas
+ - Autenticación híbrida (JWT + OAuth2)
+ - Integración con APIs externas (Mercado Pago)
+ - Gestión de estado en frontend con Zustand
+ - Desarrollo de APIs REST escalables
+
+ ---
+
+## 📌 Notas importantes
+
+ - El frontend depende del backend en ejecución
+ - El proyecto utiliza credenciales sensibles (no incluidas en el repositorio)
+ - Se recomienda el uso de variables de entorno para mayor seguridad
+
+---
+
+## 👨‍💻 Mi contribución
+
+ - Desarrollo completo del backend
+ - Diseño e implementación de la base de datos
+ - Implementación de seguridad (JWT + OAuth2)
+ - Integración con API de Mercado Pago
+ - Desarrollo de endpoints REST y lógica de negocio
+
+---
+
+## 👨‍💻 Autor
+
+ - Mark Anderson Huamani Morales
+ - Desarrollador Backend en formación
+ - 🔗 GitHub: https://github.com/MarkHM-studio
